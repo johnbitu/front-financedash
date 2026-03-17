@@ -3,17 +3,27 @@
 import { useEffect, useState } from 'react'
 import { TrendingUp, TrendingDown, Wallet, AlertCircle } from 'lucide-react'
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 import {
   Table,
   TableBody,
@@ -28,6 +38,19 @@ import { Spinner } from '@/components/ui/spinner'
 import { formatarMoeda, formatarData, tratarErro, cn } from '@/lib/utils'
 import transacaoService from '@/services/transacao-service'
 import type { ResumoDashboard, ResumoTransacao, DadoMensal } from '@/types'
+
+const chartConfig = {
+  receita: {
+    label: 'Receita',
+    color: '#16a34a',
+  },
+  despesa: {
+    label: 'Despesa',
+    color: '#dc2626',
+  },
+} satisfies ChartConfig
+
+const MAX_VALUE = 5000
 
 // Dados mock para quando a API não está disponível
 const mockDashboardData: ResumoDashboard = {
@@ -153,6 +176,34 @@ export default function DashboardPage() {
     )
   }
 
+  const currentDate = new Date()
+  const currentYear = currentDate.getFullYear()
+  const chartData = data.dadosMensais.map((item) => ({
+    month: item.mes,
+    receita: item.receitas,
+    despesa: item.despesas,
+  }))
+  const totalIncome = chartData.reduce((acc, item) => acc + item.receita, 0)
+  const totalExpense = chartData.reduce((acc, item) => acc + item.despesa, 0)
+  const balance = totalIncome - totalExpense
+  const summaryText =
+    totalIncome > totalExpense
+      ? 'Receita total maior que despesas no período'
+      : totalExpense > totalIncome
+        ? 'Despesas maiores que receitas no período'
+        : 'Receitas e despesas ficaram equilibradas no período'
+  const firstMonthInPeriod = chartData.at(0)?.month?.toLowerCase()
+  const lastMonthInPeriod = chartData.at(-1)?.month?.toLowerCase()
+  const periodText =
+    firstMonthInPeriod && lastMonthInPeriod
+      ? `entre ${firstMonthInPeriod} e ${lastMonthInPeriod} de ${currentYear}`
+      : `no ano de ${currentYear}`
+  const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
+  const periodLabel =
+    firstMonthInPeriod && lastMonthInPeriod
+      ? `${capitalize(firstMonthInPeriod)} - ${capitalize(lastMonthInPeriod)} ${currentYear}`
+      : `${currentYear}`
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -199,50 +250,48 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Receitas vs Despesas</CardTitle>
-            <CardDescription>Comparativo dos últimos 6 meses</CardDescription>
+            <CardDescription>{periodLabel}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.dadosMensais}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis
-                    dataKey="mes"
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => formatarMoeda(value)}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: 'var(--radius)',
-                    }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="receitas"
-                    name="Receitas"
-                    fill="hsl(var(--chart-2))"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="despesas"
-                    name="Despesas"
-                    fill="hsl(var(--chart-1))"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer config={chartConfig}>
+              <BarChart
+                accessibilityLayer
+                barSize={18}
+                barGap={6}
+                data={chartData}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) => String(value).slice(0, 3)}
+                />
+                <YAxis hide domain={[0, MAX_VALUE]} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dashed" />}
+                />
+                <Bar
+                  dataKey="receita"
+                  fill="var(--color-receita)"
+                  radius={4}
+                />
+                <Bar
+                  dataKey="despesa"
+                  fill="var(--color-despesa)"
+                  radius={4}
+                />
+              </BarChart>
+            </ChartContainer>
           </CardContent>
+          <CardFooter className="flex-col items-start gap-2 text-sm">
+            <div className="leading-none font-medium">{summaryText}</div>
+            <div className="leading-none text-muted-foreground">
+              Saldo acumulado de {formatarMoeda(balance)} {periodText}
+            </div>
+          </CardFooter>
         </Card>
 
         {/* Transações recentes */}
@@ -338,3 +387,5 @@ function TransactionRow({ transacao }: { transacao: ResumoTransacao }) {
     </TableRow>
   )
 }
+
+
