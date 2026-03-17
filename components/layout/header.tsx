@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   User,
+  Palette,
   LayoutDashboard,
   Wallet,
   Tags,
@@ -19,6 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/lib/auth-store'
 import { Button } from '@/components/ui/button'
+import { ThemeCommandDialog } from '@/components/layout/theme-command-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +46,7 @@ export function Header() {
   const pathname = usePathname()
   const { user, logout, isAdmin } = useAuthStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [themeDialogOpen, setThemeDialogOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -73,32 +76,45 @@ export function Header() {
       {/* Spacer for desktop */}
       <div className="hidden lg:block" />
 
-      {/* User menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="gap-2">
-            <div className="flex size-8 items-center justify-center rounded-full bg-muted">
-              <User className="size-4" />
-            </div>
-            <span className="hidden sm:inline">{user?.nome}</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span>{user?.nome}</span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {user?.email}
-              </span>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-            <LogOut className="mr-2 size-4" />
-            Sair
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center gap-2">
+        {/* User menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="gap-2">
+              <div className="flex size-8 items-center justify-center rounded-full bg-muted">
+                <User className="size-4" />
+              </div>
+              <span className="hidden sm:inline">{user?.nome}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span>{user?.nome}</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {user?.email}
+                </span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setThemeDialogOpen(true)}>
+              <Palette className="mr-2 size-4" />
+              Selecionar tema
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-destructive"
+            >
+              <LogOut className="mr-2 size-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <ThemeCommandDialog
+        open={themeDialogOpen}
+        onOpenChange={setThemeDialogOpen}
+      />
 
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
