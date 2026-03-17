@@ -11,8 +11,18 @@ import {
   Wallet as WalletIcon,
 } from 'lucide-react'
 
-import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/lib/auth-store'
+import {
+  Sidebar as SidebarRoot,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from '@/components/ui/sidebar'
 
 const navigation = [
   {
@@ -50,69 +60,69 @@ export function Sidebar() {
   const { isAdmin } = useAuthStore()
 
   return (
-    <aside className="hidden w-64 flex-col border-r bg-sidebar lg:flex">
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-          <WalletIcon className="size-5" />
-        </div>
-        <span className="text-lg font-semibold text-sidebar-foreground">
-          FinançasPro
-        </span>
-      </div>
+    <SidebarRoot variant="inset" collapsible="icon">
+      <SidebarHeader className="border-b">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/dashboard">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <WalletIcon className="size-5" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">FinançasPro</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">
+                    Gestão Financeira
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      <nav className="flex-1 overflow-y-auto p-4">
-        <ul className="flex flex-col gap-1">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-                  )}
-                >
-                  <item.icon className="size-5" />
-                  {item.name}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
+          <SidebarMenu>
+            {navigation.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <SidebarMenuItem key={item.name}>
+                  <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
 
         {isAdmin() && (
-          <>
-            <div className="my-4 border-t" />
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-              Administração
-            </p>
-            <ul className="flex flex-col gap-1">
+          <SidebarGroup>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarMenu>
               {adminNavigation.map((item) => {
                 const isActive = pathname === item.href
                 return (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-                      )}
-                    >
-                      <item.icon className="size-5" />
-                      {item.name}
-                    </Link>
-                  </li>
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 )
               })}
-            </ul>
-          </>
+            </SidebarMenu>
+          </SidebarGroup>
         )}
-      </nav>
-    </aside>
+      </SidebarContent>
+      <SidebarRail />
+    </SidebarRoot>
   )
 }

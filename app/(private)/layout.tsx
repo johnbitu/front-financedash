@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/auth-store'
 import { Spinner } from '@/components/ui/spinner'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 export default function PrivateLayout({
   children,
@@ -47,14 +48,14 @@ export default function PrivateLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
+    <SidebarProvider>
       <Sidebar />
-      <div className="flex flex-1 flex-col">
+      <SidebarInset>
         <Header />
         <main className="flex-1 overflow-y-auto bg-muted/40 p-4 lg:p-6">
           {children}
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
