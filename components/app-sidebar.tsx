@@ -7,10 +7,11 @@ import {
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
+import { NavAdmin } from "@/components/nav-admin"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { useAuthStore } from "@/lib/auth-store"
-import { ADMIN_USERS_NAV_ITEM, MAIN_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "@/lib/navigation"
+import { ADMIN_NAV_ITEMS, MAIN_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "@/lib/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -23,9 +24,7 @@ import {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore()
-  const mainNavItems = user?.role === "ADMIN"
-    ? [...MAIN_NAV_ITEMS, ADMIN_USERS_NAV_ITEM]
-    : MAIN_NAV_ITEMS
+  const isAdmin = user?.role === "ADMIN"
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -45,7 +44,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={mainNavItems} />
+        <NavMain items={MAIN_NAV_ITEMS} />
+        {isAdmin && <NavAdmin items={ADMIN_NAV_ITEMS} />}
         <NavSecondary items={SECONDARY_NAV_ITEMS} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
