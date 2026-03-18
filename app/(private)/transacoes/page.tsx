@@ -65,7 +65,6 @@ import type {
   ResumoCategoria,
   TipoTransacao,
   FiltroTransacao,
-  PaginatedResponse,
   CriarTransacaoRequest,
 } from '@/types'
 
@@ -94,32 +93,6 @@ const transacaoSchema = z.object({
 
 type TransacaoFormData = z.infer<typeof transacaoSchema>
 
-// Dados mock
-const mockTransacoes: ResumoTransacao[] = [
-  { id: 1, descricao: 'Salário', valor: 5000, tipo: 'RECEITA', data: '2026-03-15', contaId: 1, contaNome: 'Conta Corrente', categoriaId: 1, categoriaNome: 'Salário', criadoEm: '2026-03-15T10:00:00', atualizadoEm: '2026-03-15T10:00:00' },
-  { id: 2, descricao: 'Aluguel', valor: 1500, tipo: 'DESPESA', data: '2026-03-10', contaId: 1, contaNome: 'Conta Corrente', categoriaId: 2, categoriaNome: 'Moradia', criadoEm: '2026-03-10T10:00:00', atualizadoEm: '2026-03-10T10:00:00' },
-  { id: 3, descricao: 'Supermercado', valor: 450, tipo: 'DESPESA', data: '2026-03-08', contaId: 1, contaNome: 'Conta Corrente', categoriaId: 3, categoriaNome: 'Alimentação', criadoEm: '2026-03-08T10:00:00', atualizadoEm: '2026-03-08T10:00:00' },
-  { id: 4, descricao: 'Freelance', valor: 2500, tipo: 'RECEITA', data: '2026-03-05', contaId: 2, contaNome: 'Poupança', categoriaId: 4, categoriaNome: 'Freelance', criadoEm: '2026-03-05T10:00:00', atualizadoEm: '2026-03-05T10:00:00' },
-  { id: 5, descricao: 'Internet', valor: 120, tipo: 'DESPESA', data: '2026-03-01', contaId: 1, contaNome: 'Conta Corrente', categoriaId: 5, categoriaNome: 'Serviços', criadoEm: '2026-03-01T10:00:00', atualizadoEm: '2026-03-01T10:00:00' },
-  { id: 6, descricao: 'Gasolina', valor: 250, tipo: 'DESPESA', data: '2026-02-28', contaId: 3, contaNome: 'Carteira', categoriaId: 6, categoriaNome: 'Transporte', criadoEm: '2026-02-28T10:00:00', atualizadoEm: '2026-02-28T10:00:00' },
-  { id: 7, descricao: 'Rendimento Investimento', valor: 350, tipo: 'RECEITA', data: '2026-02-25', contaId: 2, contaNome: 'Poupança', categoriaId: 7, categoriaNome: 'Investimentos', criadoEm: '2026-02-25T10:00:00', atualizadoEm: '2026-02-25T10:00:00' },
-]
-
-const mockContas: ResumoConta[] = [
-  { id: 1, nome: 'Conta Corrente', tipo: 'CORRENTE', saldoAtual: 5250.75, ativo: true, criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-03-15T14:30:00' },
-  { id: 2, nome: 'Poupança', tipo: 'POUPANCA', saldoAtual: 15000, ativo: true, criadoEm: '2026-01-20T10:00:00', atualizadoEm: '2026-03-10T09:00:00' },
-  { id: 3, nome: 'Carteira', tipo: 'CARTEIRA', saldoAtual: 350, ativo: true, criadoEm: '2026-02-01T10:00:00', atualizadoEm: '2026-03-17T16:00:00' },
-]
-
-const mockCategorias: ResumoCategoria[] = [
-  { id: 1, nome: 'Salário', tipo: 'RECEITA', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 2, nome: 'Moradia', tipo: 'DESPESA', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 3, nome: 'Alimentação', tipo: 'DESPESA', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 4, nome: 'Freelance', tipo: 'RECEITA', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 5, nome: 'Serviços', tipo: 'DESPESA', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 6, nome: 'Transporte', tipo: 'DESPESA', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 7, nome: 'Investimentos', tipo: 'RECEITA', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-]
 
 export default function TransacoesPage() {
   const [transacoes, setTransacoes] = useState<ResumoTransacao[]>([])
@@ -127,7 +100,6 @@ export default function TransacoesPage() {
   const [categorias, setCategorias] = useState<ResumoCategoria[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [usingMockData, setUsingMockData] = useState(false)
 
   // Paginação
   const [paginaAtual, setPaginaAtual] = useState(0)
@@ -186,32 +158,12 @@ export default function TransacoesPage() {
       setTotalItens(transacoesRes.totalElements)
       setContas(contasRes)
       setCategorias(categoriasRes)
-      setUsingMockData(false)
     } catch (err) {
-      // Aplica filtros nos dados mock
-      let transacoesFiltradas = [...mockTransacoes]
-      if (filtros.tipo) {
-        transacoesFiltradas = transacoesFiltradas.filter((t) => t.tipo === filtros.tipo)
-      }
-      if (filtros.contaId) {
-        transacoesFiltradas = transacoesFiltradas.filter((t) => t.contaId === filtros.contaId)
-      }
-      if (filtros.categoriaId) {
-        transacoesFiltradas = transacoesFiltradas.filter((t) => t.categoriaId === filtros.categoriaId)
-      }
-      if (filtros.dataInicio) {
-        transacoesFiltradas = transacoesFiltradas.filter((t) => t.data >= filtros.dataInicio!)
-      }
-      if (filtros.dataFim) {
-        transacoesFiltradas = transacoesFiltradas.filter((t) => t.data <= filtros.dataFim!)
-      }
-
-      setTransacoes(transacoesFiltradas)
+      setTransacoes([])
       setTotalPaginas(1)
-      setTotalItens(transacoesFiltradas.length)
-      setContas(mockContas)
-      setCategorias(mockCategorias)
-      setUsingMockData(true)
+      setTotalItens(0)
+      setContas([])
+      setCategorias([])
       setError(tratarErro(err))
     } finally {
       setIsLoading(false)
@@ -271,46 +223,13 @@ export default function TransacoesPage() {
       }
 
       if (selectedTransacao) {
-        if (!usingMockData) {
-          await transacaoService.atualizar(selectedTransacao.id, payload)
-        } else {
-          const conta = contas.find((c) => c.id === data.contaId)
-          const categoria = categorias.find((c) => c.id === data.categoriaId)
-          setTransacoes((prev) =>
-            prev.map((t) =>
-              t.id === selectedTransacao.id
-                ? {
-                    ...t,
-                    ...payload,
-                    contaNome: conta?.nome || '',
-                    categoriaNome: categoria?.nome || '',
-                  }
-                : t
-            )
-          )
-        }
+        await transacaoService.atualizar(selectedTransacao.id, payload)
       } else {
-        if (!usingMockData) {
-          await transacaoService.criar(payload)
-        } else {
-          const conta = contas.find((c) => c.id === data.contaId)
-          const categoria = categorias.find((c) => c.id === data.categoriaId)
-          const novaTransacao: ResumoTransacao = {
-            id: Math.max(...transacoes.map((t) => t.id), 0) + 1,
-            ...payload,
-            contaNome: conta?.nome || '',
-            categoriaNome: categoria?.nome || '',
-            criadoEm: new Date().toISOString(),
-            atualizadoEm: new Date().toISOString(),
-          }
-          setTransacoes((prev) => [novaTransacao, ...prev])
-        }
+        await transacaoService.criar(payload)
       }
 
       setIsDialogOpen(false)
-      if (!usingMockData) {
-        fetchData()
-      }
+      fetchData()
     } catch (err) {
       setError(tratarErro(err))
     } finally {
@@ -325,16 +244,10 @@ export default function TransacoesPage() {
     setError(null)
 
     try {
-      if (!usingMockData) {
-        await transacaoService.excluir(selectedTransacao.id)
-      } else {
-        setTransacoes((prev) => prev.filter((t) => t.id !== selectedTransacao.id))
-      }
+      await transacaoService.excluir(selectedTransacao.id)
 
       setIsDeleteDialogOpen(false)
-      if (!usingMockData) {
-        fetchData()
-      }
+      fetchData()
     } catch (err) {
       setError(tratarErro(err))
     } finally {
@@ -385,16 +298,7 @@ export default function TransacoesPage() {
         </div>
       </div>
 
-      {usingMockData && (
-        <Alert>
-          <AlertCircle className="size-4" />
-          <AlertDescription>
-            Exibindo dados de demonstração. Conecte ao backend para ver seus dados reais.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && !usingMockData && (
+      {error && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -863,3 +767,4 @@ export default function TransacoesPage() {
     </div>
   )
 }
+

@@ -54,7 +54,7 @@ import type { ResumoConta, TipoConta, CriarContaRequest } from '@/types'
 
 const tiposConta: { value: TipoConta; label: string }[] = [
   { value: 'CORRENTE', label: 'Conta Corrente' },
-  { value: 'POUPANCA', label: 'Poupança' },
+  { value: 'POUPANCA', label: 'Poupanca' },
   { value: 'INVESTIMENTO', label: 'Investimento' },
   { value: 'CARTEIRA', label: 'Carteira' },
 ]
@@ -62,57 +62,25 @@ const tiposConta: { value: TipoConta; label: string }[] = [
 const contaSchema = z.object({
   nome: z
     .string()
-    .min(1, 'Nome é obrigatório')
-    .min(3, 'Nome deve ter no mínimo 3 caracteres')
-    .max(100, 'Nome deve ter no máximo 100 caracteres'),
+    .min(1, 'Nome e obrigatorio')
+    .min(3, 'Nome deve ter no minimo 3 caracteres')
+    .max(100, 'Nome deve ter no maximo 100 caracteres'),
   tipo: z.enum(['CORRENTE', 'POUPANCA', 'INVESTIMENTO', 'CARTEIRA'], {
-    required_error: 'Tipo é obrigatório',
+    required_error: 'Tipo e obrigatorio',
   }),
   saldoInicial: z
-    .number({ invalid_type_error: 'Saldo inicial é obrigatório' })
-    .min(0, 'Saldo inicial não pode ser negativo'),
+    .number({ invalid_type_error: 'Saldo inicial e obrigatorio' })
+    .min(0, 'Saldo inicial nao pode ser negativo'),
   ativo: z.boolean(),
 })
 
 type ContaFormData = z.infer<typeof contaSchema>
 
-// Dados mock
-const mockContas: ResumoConta[] = [
-  {
-    id: 1,
-    nome: 'Conta Corrente Banco X',
-    tipo: 'CORRENTE',
-    saldoAtual: 5250.75,
-    ativo: true,
-    criadoEm: '2026-01-15T10:00:00',
-    atualizadoEm: '2026-03-15T14:30:00',
-  },
-  {
-    id: 2,
-    nome: 'Poupança',
-    tipo: 'POUPANCA',
-    saldoAtual: 15000.0,
-    ativo: true,
-    criadoEm: '2026-01-20T10:00:00',
-    atualizadoEm: '2026-03-10T09:00:00',
-  },
-  {
-    id: 3,
-    nome: 'Carteira Física',
-    tipo: 'CARTEIRA',
-    saldoAtual: 350.0,
-    ativo: true,
-    criadoEm: '2026-02-01T10:00:00',
-    atualizadoEm: '2026-03-17T16:00:00',
-  },
-]
-
 export default function ContasPage() {
   const [contas, setContas] = useState<ResumoConta[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [usingMockData, setUsingMockData] = useState(false)
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedConta, setSelectedConta] = useState<ResumoConta | null>(null)
@@ -139,10 +107,8 @@ export default function ContasPage() {
     try {
       const data = await contaService.listar()
       setContas(data)
-      setUsingMockData(false)
     } catch (err) {
-      setContas(mockContas)
-      setUsingMockData(true)
+      setContas([])
       setError(tratarErro(err))
     } finally {
       setIsLoading(false)
@@ -186,53 +152,24 @@ export default function ContasPage() {
 
     try {
       if (selectedConta) {
-        // Atualizar
-        if (!usingMockData) {
-          await contaService.atualizar(selectedConta.id, {
-            nome: data.nome,
-            tipo: data.tipo,
-            saldoInicial: data.saldoInicial,
-            ativo:data.ativo,
-          })
-        } else {
-          // Mock update
-          setContas((prev) =>
-            prev.map((c) =>
-              c.id === selectedConta.id
-                ? { ...c, nome: data.nome, tipo: data.tipo, ativo: data.ativo }
-                : c
-            )
-          )
-        }
+        await contaService.atualizar(selectedConta.id, {
+          nome: data.nome,
+          tipo: data.tipo,
+          saldoInicial: data.saldoInicial,
+          ativo: data.ativo,
+        })
       } else {
-        // Criar
-        if (!usingMockData) {
-          const payload: CriarContaRequest = {
-            nome: data.nome,
-            tipo: data.tipo,
-            saldoInicial: data.saldoInicial,
-            ativo: data.ativo,
-          }
-          await contaService.criar(payload)
-        } else {
-          // Mock create
-          const novaConta: ResumoConta = {
-            id: Math.max(...contas.map((c) => c.id)) + 1,
-            nome: data.nome,
-            tipo: data.tipo,
-            saldoAtual: data.saldoInicial,
-            ativo: data.ativo,
-            criadoEm: new Date().toISOString(),
-            atualizadoEm: new Date().toISOString(),
-          }
-          setContas((prev) => [...prev, novaConta])
+        const payload: CriarContaRequest = {
+          nome: data.nome,
+          tipo: data.tipo,
+          saldoInicial: data.saldoInicial,
+          ativo: data.ativo,
         }
+        await contaService.criar(payload)
       }
 
       setIsDialogOpen(false)
-      if (!usingMockData) {
-        fetchContas()
-      }
+      fetchContas()
     } catch (err) {
       setError(tratarErro(err))
     } finally {
@@ -247,17 +184,9 @@ export default function ContasPage() {
     setError(null)
 
     try {
-      if (!usingMockData) {
-        await contaService.excluir(selectedConta.id)
-      } else {
-        // Mock delete
-        setContas((prev) => prev.filter((c) => c.id !== selectedConta.id))
-      }
-
+      await contaService.excluir(selectedConta.id)
       setIsDeleteDialogOpen(false)
-      if (!usingMockData) {
-        fetchContas()
-      }
+      fetchContas()
     } catch (err) {
       setError(tratarErro(err))
     } finally {
@@ -278,9 +207,7 @@ export default function ContasPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Contas</h1>
-          <p className="text-muted-foreground">
-            Gerencie suas contas bancárias e carteiras
-          </p>
+          <p className="text-muted-foreground">Gerencie suas contas bancarias e carteiras</p>
         </div>
         <Button onClick={handleOpenCreate}>
           <Plus className="size-4" />
@@ -288,16 +215,7 @@ export default function ContasPage() {
         </Button>
       </div>
 
-      {usingMockData && (
-        <Alert>
-          <AlertCircle className="size-4" />
-          <AlertDescription>
-            Exibindo dados de demonstração. Conecte ao backend para ver seus dados reais.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && !usingMockData && (
+      {error && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -319,7 +237,7 @@ export default function ContasPage() {
               </Empty.Icon>
               <Empty.Title>Nenhuma conta cadastrada</Empty.Title>
               <Empty.Description>
-                Crie sua primeira conta para começar a gerenciar suas finanças.
+                Crie sua primeira conta para comecar a gerenciar suas financas.
               </Empty.Description>
               <Empty.Actions>
                 <Button onClick={handleOpenCreate}>
@@ -337,16 +255,14 @@ export default function ContasPage() {
                   <TableHead className="text-right">Saldo Atual</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Atualizado em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right">Acoes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {contas.map((conta) => (
                   <TableRow key={conta.id}>
                     <TableCell className="font-medium">{conta.nome}</TableCell>
-                    <TableCell>
-                      {tiposConta.find((t) => t.value === conta.tipo)?.label || conta.tipo}
-                    </TableCell>
+                    <TableCell>{tiposConta.find((t) => t.value === conta.tipo)?.label || conta.tipo}</TableCell>
                     <TableCell
                       className={cn(
                         'text-right font-medium',
@@ -359,17 +275,13 @@ export default function ContasPage() {
                       <span
                         className={cn(
                           'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
-                          conta.ativo
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-700'
+                          conta.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
                         )}
                       >
                         {conta.ativo ? 'Ativa' : 'Inativa'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatarData(conta.atualizadoEm)}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground">{formatarData(conta.atualizadoEm)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -399,25 +311,18 @@ export default function ContasPage() {
         </CardContent>
       </Card>
 
-      {/* Dialog de Criar/Editar */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {selectedConta ? 'Editar Conta' : 'Nova Conta'}
-            </DialogTitle>
+            <DialogTitle>{selectedConta ? 'Editar Conta' : 'Nova Conta'}</DialogTitle>
             <DialogDescription>
-              {selectedConta
-                ? 'Altere as informações da conta'
-                : 'Preencha os dados para criar uma nova conta'}
+              {selectedConta ? 'Altere as informacoes da conta' : 'Preencha os dados para criar uma nova conta'}
             </DialogDescription>
           </DialogHeader>
 
-	          <form onSubmit={handleSubmit(onSubmit)}>
-	            {selectedConta && (
-	              <input type="hidden" {...register('saldoInicial', { valueAsNumber: true })} />
-	            )}
-	            <FieldGroup>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            {selectedConta && <input type="hidden" {...register('saldoInicial', { valueAsNumber: true })} />}
+            <FieldGroup>
               <Field data-invalid={!!errors.nome}>
                 <FieldLabel htmlFor="nome">Nome</FieldLabel>
                 <Input
@@ -474,22 +379,14 @@ export default function ContasPage() {
                   name="ativo"
                   control={control}
                   render={({ field }) => (
-                    <Switch
-                      id="ativo"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch id="ativo" checked={field.value} onCheckedChange={field.onChange} />
                   )}
                 />
               </Field>
             </FieldGroup>
 
             <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -501,14 +398,12 @@ export default function ContasPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Confirmação de Exclusão */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Conta</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a conta &quot;{selectedConta?.nome}&quot;?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir a conta &quot;{selectedConta?.nome}&quot;? Esta acao nao pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

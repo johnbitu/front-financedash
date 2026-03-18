@@ -10,7 +10,7 @@ export const api = axios.create({
   },
 })
 
-// Flag para evitar múltiplas tentativas de refresh simultâneas
+// Avoid multiple concurrent refresh calls
 let isRefreshing = false
 let failedQueue: Array<{
   resolve: (token: string) => void
@@ -28,7 +28,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = []
 }
 
-// Interceptor de request: adiciona o token de autenticação
+// Request interceptor: add auth header when token is present
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().accessToken
@@ -37,12 +37,10 @@ api.interceptors.request.use(
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
-// Interceptor de response: trata 401 e faz refresh automático
+// Response interceptor: refresh token on auth errors
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -50,18 +48,20 @@ api.interceptors.response.use(
       _retry?: boolean
     }
 
-    // Se não for erro 401 ou já tentamos refresh, rejeita
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    const status = error.response?.status
+    const isAuthError = status === 401 || status === 403
+
+    // Skip if not an auth error or if already retried
+    if (!isAuthError || originalRequest._retry) {
       return Promise.reject(error)
     }
 
-    // Ignora refresh para rotas de auth
+    // Never refresh for auth endpoints themselves
     const authRoutes = ['/auth/login', '/auth/register', '/auth/refresh']
     if (authRoutes.some((route) => originalRequest.url?.includes(route))) {
       return Promise.reject(error)
     }
 
-    // Se já está fazendo refresh, adiciona à fila
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({
@@ -91,7 +91,10 @@ api.interceptors.response.use(
         refreshToken,
       })
 
-      const { accessToken, refreshToken: newRefreshToken } = response.data
+      const { accessToken, refreshToken: newRefreshToken } = response.data as {
+        accessToken: string
+        refreshToken: string
+      }
 
       useAuthStore.getState().setTokens(accessToken, newRefreshToken)
 
@@ -100,17 +103,15 @@ api.interceptors.response.use(
       }
 
       processQueue(null, accessToken)
-
       return api(originalRequest)
     } catch (refreshError) {
       processQueue(refreshError as Error, null)
       useAuthStore.getState().logout()
-      
-      // Redireciona para login apenas no cliente
+
       if (typeof window !== 'undefined') {
         window.location.href = '/login'
       }
-      
+
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

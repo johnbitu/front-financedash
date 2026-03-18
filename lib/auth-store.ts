@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { create } from 'zustand'
 import type { UserInfo, Role } from '@/types'
 
@@ -6,14 +7,14 @@ interface AuthState {
   accessToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
-  
+
   // Actions
   setUser: (user: UserInfo) => void
   setTokens: (accessToken: string, refreshToken: string) => void
   login: (user: UserInfo, accessToken: string, refreshToken: string) => void
   logout: () => void
   setLoading: (loading: boolean) => void
-  initializeAuth: () => void
+  initializeAuth: () => Promise<void>
   isAdmin: () => boolean
   hasRole: (role: Role) => boolean
 }
@@ -29,8 +30,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setTokens: (accessToken: string, refreshToken: string) => {
-    // accessToken fica em memória (Zustand)
-    // refreshToken vai para localStorage
+    // accessToken stays in memory (Zustand)
+    // refreshToken goes to localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('refreshToken', refreshToken)
     }
@@ -40,7 +41,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: (user: UserInfo, accessToken: string, refreshToken: string) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('refreshToken', refreshToken)
-      // Salva info básica do usuário para rehidratação
+      // Save basic user info for rehydration
       localStorage.setItem('user', JSON.stringify(user))
     }
     set({
@@ -68,30 +69,46 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: loading })
   },
 
-  initializeAuth: () => {
+  initializeAuth: async () => {
     if (typeof window === 'undefined') {
       set({ isLoading: false })
+      return
+    }
+
+    // Prevent duplicate inits from multiple layouts/effects
+    if (!get().isLoading) {
       return
     }
 
     const refreshToken = localStorage.getItem('refreshToken')
     const userJson = localStorage.getItem('user')
 
-    if (refreshToken && userJson) {
-      try {
-        const user = JSON.parse(userJson) as UserInfo
-        set({
-          user,
-          isAuthenticated: true,
-          isLoading: false,
-        })
-        // O token será obtido via refresh na primeira requisição
-      } catch {
-        // Se der erro no parse, faz logout
-        get().logout()
-      }
-    } else {
+    if (!refreshToken || !userJson) {
       set({ isLoading: false })
+      return
+    }
+
+    try {
+      const user = JSON.parse(userJson) as UserInfo
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
+      const response = await axios.post(`${API_URL}/auth/refresh`, {
+        refreshToken,
+      })
+
+      const { accessToken, refreshToken: newRefreshToken } = response.data as {
+        accessToken: string
+        refreshToken: string
+      }
+
+      localStorage.setItem('refreshToken', newRefreshToken)
+      set({
+        user,
+        accessToken,
+        isAuthenticated: true,
+        isLoading: false,
+      })
+    } catch {
+      get().logout()
     }
   },
 

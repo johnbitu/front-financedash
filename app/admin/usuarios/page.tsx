@@ -22,14 +22,6 @@ import { useAuthStore } from '@/lib/auth-store'
 import usuarioService from '@/services/usuario-service'
 import type { UserInfo, Role } from '@/types'
 
-// Dados mock
-const mockUsuarios: UserInfo[] = [
-  { id: 1, nome: 'Admin Master', email: 'admin@exemplo.com', role: 'ADMIN', criadoEm: '2026-01-01T10:00:00' },
-  { id: 2, nome: 'João Silva', email: 'joao@exemplo.com', role: 'USUARIO', criadoEm: '2026-01-15T14:30:00' },
-  { id: 3, nome: 'Maria Santos', email: 'maria@exemplo.com', role: 'USUARIO', criadoEm: '2026-02-10T09:15:00' },
-  { id: 4, nome: 'Pedro Oliveira', email: 'pedro@exemplo.com', role: 'USUARIO', criadoEm: '2026-02-28T16:45:00' },
-  { id: 5, nome: 'Ana Costa', email: 'ana@exemplo.com', role: 'ADMIN', criadoEm: '2026-03-05T11:20:00' },
-]
 
 const rolesConfig: Record<Role, { label: string; className: string; icon: typeof Shield }> = {
   ADMIN: {
@@ -50,7 +42,6 @@ export default function AdminUsuariosPage() {
   const [usuarios, setUsuarios] = useState<UserInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [usingMockData, setUsingMockData] = useState(false)
 
   useEffect(() => {
     initializeAuth()
@@ -76,10 +67,8 @@ export default function AdminUsuariosPage() {
       try {
         const data = await usuarioService.listar()
         setUsuarios(data)
-        setUsingMockData(false)
       } catch (err) {
-        setUsuarios(mockUsuarios)
-        setUsingMockData(true)
+        setUsuarios([])
         setError(tratarErro(err))
       } finally {
         setIsLoading(false)
@@ -113,16 +102,7 @@ export default function AdminUsuariosPage() {
         </p>
       </div>
 
-      {usingMockData && (
-        <Alert>
-          <AlertCircle className="size-4" />
-          <AlertDescription>
-            Exibindo dados de demonstração. Conecte ao backend para ver os dados reais.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && !usingMockData && (
+      {error && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -249,3 +229,4 @@ export default function AdminUsuariosPage() {
     </div>
   )
 }
+

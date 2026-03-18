@@ -61,37 +61,21 @@ const tiposCategoria: { value: TipoCategoria; label: string; icon: typeof Trendi
 const categoriaSchema = z.object({
   nome: z
     .string()
-    .min(1, 'Nome é obrigatório')
-    .min(3, 'Nome deve ter no mínimo 3 caracteres')
-    .max(100, 'Nome deve ter no máximo 100 caracteres'),
+    .min(1, 'Nome e obrigatorio')
+    .min(3, 'Nome deve ter no minimo 3 caracteres')
+    .max(100, 'Nome deve ter no maximo 100 caracteres'),
   tipo: z.enum(['RECEITA', 'DESPESA'], {
-    required_error: 'Tipo é obrigatório',
+    required_error: 'Tipo e obrigatorio',
   }),
-  descricao: z
-    .string()
-    .max(255, 'Descrição deve ter no máximo 255 caracteres')
-    .optional(),
+  descricao: z.string().max(255, 'Descricao deve ter no maximo 255 caracteres').optional(),
 })
 
 type CategoriaFormData = z.infer<typeof categoriaSchema>
-
-// Dados mock
-const mockCategorias: ResumoCategoria[] = [
-  { id: 1, nome: 'Salário', tipo: 'RECEITA', descricao: 'Salário mensal', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 2, nome: 'Freelance', tipo: 'RECEITA', descricao: 'Trabalhos freelance', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 3, nome: 'Investimentos', tipo: 'RECEITA', descricao: 'Rendimentos de investimentos', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 4, nome: 'Moradia', tipo: 'DESPESA', descricao: 'Aluguel, condomínio, etc', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 5, nome: 'Alimentação', tipo: 'DESPESA', descricao: 'Supermercado e restaurantes', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 6, nome: 'Transporte', tipo: 'DESPESA', descricao: 'Combustível, transporte público', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 7, nome: 'Lazer', tipo: 'DESPESA', descricao: 'Entretenimento e viagens', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-  { id: 8, nome: 'Saúde', tipo: 'DESPESA', descricao: 'Plano de saúde, medicamentos', criadoEm: '2026-01-15T10:00:00', atualizadoEm: '2026-01-15T10:00:00' },
-]
 
 export default function CategoriasPage() {
   const [categorias, setCategorias] = useState<ResumoCategoria[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [usingMockData, setUsingMockData] = useState(false)
   const [filtroTipo, setFiltroTipo] = useState<'TODAS' | TipoCategoria>('TODAS')
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -119,10 +103,8 @@ export default function CategoriasPage() {
     try {
       const data = await categoriaService.listar()
       setCategorias(data)
-      setUsingMockData(false)
     } catch (err) {
-      setCategorias(mockCategorias)
-      setUsingMockData(true)
+      setCategorias([])
       setError(tratarErro(err))
     } finally {
       setIsLoading(false)
@@ -133,9 +115,8 @@ export default function CategoriasPage() {
     fetchCategorias()
   }, [])
 
-  const categoriasFiltradas = filtroTipo === 'TODAS'
-    ? categorias
-    : categorias.filter((c) => c.tipo === filtroTipo)
+  const categoriasFiltradas =
+    filtroTipo === 'TODAS' ? categorias : categorias.filter((c) => c.tipo === filtroTipo)
 
   const receitasCount = categorias.filter((c) => c.tipo === 'RECEITA').length
   const despesasCount = categorias.filter((c) => c.tipo === 'DESPESA').length
@@ -171,41 +152,17 @@ export default function CategoriasPage() {
 
     try {
       if (selectedCategoria) {
-        if (!usingMockData) {
-          await categoriaService.atualizar(selectedCategoria.id, {
-            nome: data.nome,
-            tipo: data.tipo,
-            descricao: data.descricao,
-          })
-        } else {
-          setCategorias((prev) =>
-            prev.map((c) =>
-              c.id === selectedCategoria.id
-                ? { ...c, nome: data.nome, tipo: data.tipo, descricao: data.descricao }
-                : c
-            )
-          )
-        }
+        await categoriaService.atualizar(selectedCategoria.id, {
+          nome: data.nome,
+          tipo: data.tipo,
+          descricao: data.descricao,
+        })
       } else {
-        if (!usingMockData) {
-          await categoriaService.criar(data as CriarCategoriaRequest)
-        } else {
-          const novaCategoria: ResumoCategoria = {
-            id: Math.max(...categorias.map((c) => c.id)) + 1,
-            nome: data.nome,
-            tipo: data.tipo,
-            descricao: data.descricao,
-            criadoEm: new Date().toISOString(),
-            atualizadoEm: new Date().toISOString(),
-          }
-          setCategorias((prev) => [...prev, novaCategoria])
-        }
+        await categoriaService.criar(data as CriarCategoriaRequest)
       }
 
       setIsDialogOpen(false)
-      if (!usingMockData) {
-        fetchCategorias()
-      }
+      fetchCategorias()
     } catch (err) {
       setError(tratarErro(err))
     } finally {
@@ -220,16 +177,9 @@ export default function CategoriasPage() {
     setError(null)
 
     try {
-      if (!usingMockData) {
-        await categoriaService.excluir(selectedCategoria.id)
-      } else {
-        setCategorias((prev) => prev.filter((c) => c.id !== selectedCategoria.id))
-      }
-
+      await categoriaService.excluir(selectedCategoria.id)
       setIsDeleteDialogOpen(false)
-      if (!usingMockData) {
-        fetchCategorias()
-      }
+      fetchCategorias()
     } catch (err) {
       setError(tratarErro(err))
     } finally {
@@ -250,9 +200,7 @@ export default function CategoriasPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Categorias</h1>
-          <p className="text-muted-foreground">
-            Organize suas transações por categorias
-          </p>
+          <p className="text-muted-foreground">Organize suas transacoes por categorias</p>
         </div>
         <Button onClick={handleOpenCreate}>
           <Plus className="size-4" />
@@ -260,16 +208,7 @@ export default function CategoriasPage() {
         </Button>
       </div>
 
-      {usingMockData && (
-        <Alert>
-          <AlertCircle className="size-4" />
-          <AlertDescription>
-            Exibindo dados de demonstração. Conecte ao backend para ver seus dados reais.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && !usingMockData && (
+      {error && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -280,7 +219,8 @@ export default function CategoriasPage() {
         <CardHeader>
           <CardTitle>Suas Categorias</CardTitle>
           <CardDescription>
-            {categorias.length} categoria{categorias.length !== 1 ? 's' : ''} cadastrada{categorias.length !== 1 ? 's' : ''}
+            {categorias.length} categoria{categorias.length !== 1 ? 's' : ''} cadastrada
+            {categorias.length !== 1 ? 's' : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -304,7 +244,7 @@ export default function CategoriasPage() {
                   <Empty.Title>Nenhuma categoria encontrada</Empty.Title>
                   <Empty.Description>
                     {filtroTipo === 'TODAS'
-                      ? 'Crie sua primeira categoria para começar a organizar suas transações.'
+                      ? 'Crie sua primeira categoria para organizar suas transacoes.'
                       : `Nenhuma categoria de ${filtroTipo.toLowerCase()} cadastrada.`}
                   </Empty.Description>
                   <Empty.Actions>
@@ -320,9 +260,9 @@ export default function CategoriasPage() {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Tipo</TableHead>
-                      <TableHead>Descrição</TableHead>
+                      <TableHead>Descricao</TableHead>
                       <TableHead>Criado em</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      <TableHead className="text-right">Acoes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -397,16 +337,13 @@ export default function CategoriasPage() {
         </CardContent>
       </Card>
 
-      {/* Dialog de Criar/Editar */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {selectedCategoria ? 'Editar Categoria' : 'Nova Categoria'}
-            </DialogTitle>
+            <DialogTitle>{selectedCategoria ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
             <DialogDescription>
               {selectedCategoria
-                ? 'Altere as informações da categoria'
+                ? 'Altere as informacoes da categoria'
                 : 'Preencha os dados para criar uma nova categoria'}
             </DialogDescription>
           </DialogHeader>
@@ -415,12 +352,7 @@ export default function CategoriasPage() {
             <FieldGroup>
               <Field data-invalid={!!errors.nome}>
                 <FieldLabel htmlFor="nome">Nome</FieldLabel>
-                <Input
-                  id="nome"
-                  placeholder="Ex: Alimentação"
-                  aria-invalid={!!errors.nome}
-                  {...register('nome')}
-                />
+                <Input id="nome" placeholder="Ex: Alimentacao" aria-invalid={!!errors.nome} {...register('nome')} />
                 <FieldError errors={[errors.nome]} />
               </Field>
 
@@ -456,10 +388,10 @@ export default function CategoriasPage() {
               </Field>
 
               <Field data-invalid={!!errors.descricao}>
-                <FieldLabel htmlFor="descricao">Descrição (opcional)</FieldLabel>
+                <FieldLabel htmlFor="descricao">Descricao (opcional)</FieldLabel>
                 <Textarea
                   id="descricao"
-                  placeholder="Descrição da categoria"
+                  placeholder="Descricao da categoria"
                   rows={3}
                   aria-invalid={!!errors.descricao}
                   {...register('descricao')}
@@ -469,11 +401,7 @@ export default function CategoriasPage() {
             </FieldGroup>
 
             <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -485,14 +413,12 @@ export default function CategoriasPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Confirmação de Exclusão */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Categoria</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a categoria &quot;{selectedCategoria?.nome}&quot;?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir a categoria &quot;{selectedCategoria?.nome}&quot;? Esta acao nao pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
