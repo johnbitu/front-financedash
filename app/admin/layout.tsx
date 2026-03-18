@@ -1,8 +1,10 @@
 'use client'
 
-import { Sidebar } from '@/components/layout/sidebar'
-import { Header } from '@/components/layout/header'
+import { type CSSProperties } from 'react'
+
+import { AppSidebar } from '@/components/app-sidebar'
 import { PageLoading } from '@/components/shared/page-loading'
+import { SiteHeader } from '@/components/site-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useAuthGuard } from '@/hooks/use-auth-guard'
 
@@ -27,10 +29,17 @@ export default function AdminLayout({
   }
 
   return (
-    <SidebarProvider>
-      <Sidebar />
+    <SidebarProvider
+      style={
+        {
+          '--sidebar-width': 'calc(var(--spacing) * 72)',
+          '--header-height': 'calc(var(--spacing) * 12)',
+        } as CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
       <SidebarInset>
-        <Header />
+        <SiteHeader />
         <main className="flex-1 overflow-y-auto bg-muted/40 p-4 lg:p-6">
           {children}
         </main>
