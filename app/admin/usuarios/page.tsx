@@ -236,7 +236,7 @@ export default function AdminUsuariosPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatarDataHora(usuario.criadoEm)}
+                        {formatarDataHora(usuario.criadoEm ?? '')}
                       </TableCell>
                     </TableRow>
                   )

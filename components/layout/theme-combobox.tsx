@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
-import { Button } from '@/components/ui/button'
 import {
   Combobox,
   ComboboxContent,
@@ -18,11 +17,12 @@ import { Command } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 
 type ThemeOption = {
-  value: 'dark' | 'green-dark' | 'light' | 'green-light'
-  label: 'Dark' | 'Verde-Dark' | 'Light' | 'Verde-Light'
+  value: 'tema-bom' | 'dark' | 'green-dark' | 'light' | 'green-light'
+  label: 'TemaBom' | 'Dark' | 'Verde-Dark' | 'Light' | 'Verde-Light'
 }
 
 const themeOptions: ThemeOption[] = [
+  { value: 'tema-bom', label: 'TemaBom' },
   { value: 'dark', label: 'Dark' },
   { value: 'green-dark', label: 'Verde-Dark' },
   { value: 'light', label: 'Light' },
@@ -49,16 +49,12 @@ export function ThemeCombobox() {
 
   return (
     <Combobox open={open} onOpenChange={setOpen}>
-      <ComboboxTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-[140px] justify-between sm:w-[180px]"
-        >
-          <span className="truncate">{selectedThemeLabel}</span>
-          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-        </Button>
+      <ComboboxTrigger
+        role="combobox"
+        aria-expanded={open}
+        className="w-[140px] justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm sm:w-[180px]"
+      >
+        <span className="truncate">{selectedThemeLabel}</span>
       </ComboboxTrigger>
       <ComboboxContent align="end">
         <Command>

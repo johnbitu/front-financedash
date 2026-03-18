@@ -14,14 +14,15 @@ import {
 } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 
-type ThemeValue = 'dark' | 'green-dark' | 'light' | 'green-light'
+type ThemeValue = 'tema-bom' | 'dark' | 'green-dark' | 'light' | 'green-light'
 
 type ThemeOption = {
   value: ThemeValue
-  label: 'Dark' | 'Verde-Dark' | 'Light' | 'Verde-Light'
+  label: 'TemaBom' | 'Dark' | 'Verde-Dark' | 'Light' | 'Verde-Light'
 }
 
 const themeOptions: ThemeOption[] = [
+  { value: 'tema-bom', label: 'TemaBom' },
   { value: 'dark', label: 'Dark' },
   { value: 'green-dark', label: 'Verde-Dark' },
   { value: 'light', label: 'Light' },
