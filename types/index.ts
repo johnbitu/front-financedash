@@ -59,7 +59,7 @@ export interface CriarContaRequest {
   nome: string
   tipo: TipoConta
   saldoInicial: number
-  ativo?: boolean
+  ativo: boolean
 }
 
 export interface AtualizarContaRequest {

@@ -207,7 +207,13 @@ export default function ContasPage() {
       } else {
         // Criar
         if (!usingMockData) {
-          await contaService.criar(data as CriarContaRequest)
+          const payload: CriarContaRequest = {
+            nome: data.nome,
+            tipo: data.tipo,
+            saldoInicial: data.saldoInicial,
+            ativo: data.ativo,
+          }
+          await contaService.criar(payload)
         } else {
           // Mock create
           const novaConta: ResumoConta = {

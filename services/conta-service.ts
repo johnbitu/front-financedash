@@ -49,6 +49,7 @@ export const contaService = {
       nome: data.nome,
       tipo: data.tipo,
       saldoInicial: data.saldoInicial,
+      ativo: data.ativo,
     }
     const response = await api.post<BackendAccountSummary>('/accounts', payload)
     return mapBackendAccount(response.data)

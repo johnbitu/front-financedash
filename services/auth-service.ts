@@ -1,16 +1,17 @@
-import api from '@/lib/api'
+﻿import api from '@/lib/api'
 import type {
   LoginRequest,
   LoginResponse,
   RegistroRequest,
   RefreshTokenResponse,
   RefreshTokenRequest,
+  Role,
   UserInfo,
 } from '@/types'
 
 export const authService = {
   /**
-   * Realiza login do usuário
+   * Realiza login do usuario
    */
   async login(data: LoginRequest): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>('/auth/login', data)
@@ -18,10 +19,16 @@ export const authService = {
   },
 
   /**
-   * Registra um novo usuário
+   * Registra um novo usuario
    */
   async register(data: RegistroRequest): Promise<UserInfo> {
-    const response = await api.post<UserInfo>('/auth/register', data)
+    const role: Role = data.role ?? 'USUARIO'
+    const payload = {
+      ...data,
+      role,
+      roles: [role],
+    }
+    const response = await api.post<UserInfo>('/auth/register', payload)
     return response.data
   },
 
@@ -34,7 +41,7 @@ export const authService = {
   },
 
   /**
-   * Realiza logout (invalidação no servidor, se houver)
+   * Realiza logout (invalidacao no servidor, se houver)
    */
   async logout(): Promise<void> {
     try {
@@ -46,4 +53,3 @@ export const authService = {
 }
 
 export default authService
-
