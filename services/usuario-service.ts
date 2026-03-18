@@ -6,7 +6,7 @@ export const usuarioService = {
    * Lista todos os usuarios (somente ADMIN)
    */
   async listar(): Promise<UserInfo[]> {
-    const response = await api.get<UserInfo[]>('/users')
+    const response = await api.get<UserInfo[]>('/api/users')
     return response.data
   },
 

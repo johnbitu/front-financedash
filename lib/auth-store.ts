@@ -2,6 +2,18 @@ import axios from 'axios'
 import { create } from 'zustand'
 import type { UserInfo, Role } from '@/types'
 
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
+
+const API_URL = (() => {
+  const normalized = rawApiUrl.replace(/\/+$/, '')
+
+  if (!/^https?:\/\//i.test(normalized)) {
+    return normalized || '/api'
+  }
+
+  return normalized.endsWith('/api') ? normalized : `${normalized}/api`
+})()
+
 interface AuthState {
   user: UserInfo | null
   accessToken: string | null
@@ -90,7 +102,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const user = JSON.parse(userJson) as UserInfo
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
       const response = await axios.post(`${API_URL}/auth/refresh`, {
         refreshToken,
       })

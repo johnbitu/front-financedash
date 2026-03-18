@@ -9,6 +9,7 @@ import {
   IconSettings,
   IconTargetArrow,
   IconUserDollar,
+  IconUsers,
   type Icon,
 } from '@tabler/icons-react'
 
@@ -28,6 +29,12 @@ export const MAIN_NAV_ITEMS: NavigationItem[] = [
   { title: 'Assinaturas', url: '/dashboard', icon: IconUserDollar },
   { title: 'Metas', url: '/dashboard', icon: IconTargetArrow },
 ]
+
+export const ADMIN_USERS_NAV_ITEM: NavigationItem = {
+  title: 'Usuarios',
+  url: '/admin/usuarios',
+  icon: IconUsers,
+}
 
 export const SECONDARY_NAV_ITEMS: Required<NavigationItem>[] = [
   { title: 'Relatorios', url: '/dashboard', icon: IconReportAnalytics },

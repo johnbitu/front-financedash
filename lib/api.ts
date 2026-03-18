@@ -1,7 +1,19 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from './auth-store'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
+
+// Normalize base URL to avoid calls hitting "/users" instead of "/api/users"
+// when NEXT_PUBLIC_API_URL is set to host-only (e.g. http://localhost:8080).
+const API_URL = (() => {
+  const normalized = rawApiUrl.replace(/\/+$/, '')
+
+  if (!/^https?:\/\//i.test(normalized)) {
+    return normalized || '/api'
+  }
+
+  return normalized.endsWith('/api') ? normalized : `${normalized}/api`
+})()
 
 export const api = axios.create({
   baseURL: API_URL,
