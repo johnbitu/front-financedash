@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 import { cn } from "@/lib/utils";
+import { DEFAULT_THEME, THEME_VALUES } from '@/lib/theme'
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -45,9 +46,9 @@ export default function RootLayout({
         <TooltipProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="tema-bom"
+            defaultTheme={DEFAULT_THEME}
             enableSystem={false}
-            themes={['tema-bom', 'dark', 'green-dark', 'light', 'green-light']}
+            themes={[...THEME_VALUES]}
           >
             {children}
           </ThemeProvider>

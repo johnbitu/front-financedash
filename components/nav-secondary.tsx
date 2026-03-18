@@ -3,8 +3,8 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { type Icon } from "@tabler/icons-react"
 
+import type { NavigationItem } from "@/lib/navigation"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -17,11 +17,7 @@ export function NavSecondary({
   items,
   ...props
 }: {
-  items: {
-    title: string
-    url: string
-    icon: Icon
-  }[]
+  items: Required<NavigationItem>[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   const pathname = usePathname()
 

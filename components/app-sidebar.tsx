@@ -3,24 +3,14 @@
 import * as React from "react"
 import Link from "next/link"
 import {
-  IconBuildingBank,
-  IconCalendarStats,
-  IconCategory,
-  IconCreditCard,
-  IconDashboard,
   IconInnerShadowTop,
-  IconReceipt2,
-  IconReportAnalytics,
-  IconSettings,
-  IconTargetArrow,
-  IconUserDollar,
-  IconWallet,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { useAuthStore } from "@/lib/auth-store"
+import { MAIN_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "@/lib/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -30,23 +20,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
-const data = {
-  navMain: [
-    { title: "Visao geral", url: "/dashboard", icon: IconDashboard },
-    { title: "Este mes", url: "/dashboard", icon: IconCalendarStats },
-    { title: "Transacoes", url: "/transacoes", icon: IconReceipt2 },
-    { title: "Categorias", url: "/categorias", icon: IconCategory },
-    { title: "Contas", url: "/contas", icon: IconBuildingBank },
-    { title: "Cartoes", url: "/dashboard", icon: IconCreditCard },
-    { title: "Assinaturas", url: "/dashboard", icon: IconUserDollar },
-    { title: "Metas", url: "/dashboard", icon: IconTargetArrow },
-  ],
-  navSecondary: [
-    { title: "Relatorios", url: "/dashboard", icon: IconReportAnalytics },
-    { title: "Configuracoes", url: "/dashboard", icon: IconSettings },
-  ],
-}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore()
@@ -69,8 +42,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={MAIN_NAV_ITEMS} />
+        <NavSecondary items={SECONDARY_NAV_ITEMS} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser

@@ -14,20 +14,8 @@ import {
   ComboboxTrigger,
 } from '@/components/ui/combobox'
 import { Command } from '@/components/ui/command'
+import { THEME_OPTIONS } from '@/lib/theme'
 import { cn } from '@/lib/utils'
-
-type ThemeOption = {
-  value: 'tema-bom' | 'dark' | 'green-dark' | 'light' | 'green-light'
-  label: 'TemaBom' | 'Dark' | 'Verde-Dark' | 'Light' | 'Verde-Light'
-}
-
-const themeOptions: ThemeOption[] = [
-  { value: 'tema-bom', label: 'TemaBom' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'green-dark', label: 'Verde-Dark' },
-  { value: 'light', label: 'Light' },
-  { value: 'green-light', label: 'Verde-Light' },
-]
 
 export function ThemeCombobox() {
   const [open, setOpen] = useState(false)
@@ -42,7 +30,7 @@ export function ThemeCombobox() {
     if (!mounted) return 'Selecione um tema'
 
     return (
-      themeOptions.find((option) => option.value === theme)?.label ??
+      THEME_OPTIONS.find((option) => option.value === theme)?.label ??
       'Selecione um tema'
     )
   }, [mounted, theme])
@@ -61,7 +49,7 @@ export function ThemeCombobox() {
           <ComboboxInput placeholder="Selecione um tema" />
           <ComboboxList>
             <ComboboxEmpty>Nenhum tema encontrado.</ComboboxEmpty>
-            {themeOptions.map((option) => (
+            {THEME_OPTIONS.map((option) => (
               <ComboboxItem
                 key={option.value}
                 value={option.label}

@@ -1,44 +1,28 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/auth-store'
-import { Spinner } from '@/components/ui/spinner'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
+import { PageLoading } from '@/components/shared/page-loading'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { useAuthGuard } from '@/hooks/use-auth-guard'
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-  const { isAuthenticated, isLoading, initializeAuth, isAdmin } = useAuthStore()
-
-  useEffect(() => {
-    initializeAuth()
-  }, [initializeAuth])
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.replace('/login')
-      } else if (!isAdmin()) {
-        router.replace('/dashboard')
-      }
-    }
-  }, [isAuthenticated, isLoading, router, isAdmin])
+  const { isAuthenticated, isAuthorized, isLoading } = useAuthGuard({
+    requireAuth: true,
+    requireAdmin: true,
+    redirectIfUnauthenticatedTo: '/login',
+    redirectIfUnauthorizedTo: '/dashboard',
+  })
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    )
+    return <PageLoading className="min-h-screen" />
   }
 
-  if (!isAuthenticated || !isAdmin()) {
+  if (!isAuthenticated || !isAuthorized) {
     return null
   }
 

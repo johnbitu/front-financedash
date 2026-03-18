@@ -45,7 +45,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { PageErrorAlert } from '@/components/shared/page-error-alert'
+import { PageLoading } from '@/components/shared/page-loading'
 import { Spinner } from '@/components/ui/spinner'
 import { Empty } from '@/components/ui/empty'
 import {
@@ -265,11 +266,7 @@ export default function TransacoesPage() {
   )
 
   if (isLoading && transacoes.length === 0) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    )
+    return <PageLoading />
   }
 
   return (
@@ -299,10 +296,7 @@ export default function TransacoesPage() {
       </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <PageErrorAlert message={error} />
       )}
 
       {/* Filtros */}

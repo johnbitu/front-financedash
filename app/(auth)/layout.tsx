@@ -1,35 +1,21 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/auth-store'
-import { Spinner } from '@/components/ui/spinner'
 import { Wallet } from 'lucide-react'
+import { PageLoading } from '@/components/shared/page-loading'
+import { useAuthGuard } from '@/hooks/use-auth-guard'
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-  const { isAuthenticated, isLoading, initializeAuth } = useAuthStore()
-
-  useEffect(() => {
-    initializeAuth()
-  }, [initializeAuth])
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace('/dashboard')
-    }
-  }, [isAuthenticated, isLoading, router])
+  const { isAuthenticated, isLoading } = useAuthGuard({
+    requireAuth: false,
+    redirectIfAuthenticatedTo: '/dashboard',
+  })
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    )
+    return <PageLoading className="min-h-screen" />
   }
 
   if (isAuthenticated) {

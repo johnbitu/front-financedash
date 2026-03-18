@@ -1,49 +1,35 @@
 'use client'
 
-import { useEffect, type CSSProperties } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { useAuthStore } from '@/lib/auth-store'
-import { Spinner } from '@/components/ui/spinner'
+import { type CSSProperties } from 'react'
+import { usePathname } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
+import { PageLoading } from '@/components/shared/page-loading'
 import { SiteHeader } from '@/components/site-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { useAuthGuard } from '@/hooks/use-auth-guard'
 
 export default function PrivateLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
   const pathname = usePathname()
-  const { isAuthenticated, isLoading, initializeAuth, isAdmin } = useAuthStore()
-
-  useEffect(() => {
-    initializeAuth()
-  }, [initializeAuth])
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.replace('/login')
-      } else if (pathname.startsWith('/admin') && !isAdmin()) {
-        router.replace('/dashboard')
-      }
-    }
-  }, [isAuthenticated, isLoading, pathname, router, isAdmin])
+  const { isAuthenticated, isAuthorized, isLoading } = useAuthGuard({
+    requireAuth: true,
+    requireAdmin: pathname.startsWith('/admin'),
+    redirectIfUnauthenticatedTo: '/login',
+    redirectIfUnauthorizedTo: '/dashboard',
+  })
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    )
+    return <PageLoading className="min-h-screen" />
   }
 
   if (!isAuthenticated) {
     return null
   }
 
-  if (pathname.startsWith('/admin') && !isAdmin()) {
+  if (!isAuthorized) {
     return null
   }
 

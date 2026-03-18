@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { AlertCircle, Shield, User } from 'lucide-react'
+import { Shield, User } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -13,12 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Spinner } from '@/components/ui/spinner'
 import { Empty } from '@/components/ui/empty'
+import { PageErrorAlert } from '@/components/shared/page-error-alert'
+import { PageLoading } from '@/components/shared/page-loading'
 
 import { formatarDataHora, tratarErro, cn } from '@/lib/utils'
-import { useAuthStore } from '@/lib/auth-store'
 import usuarioService from '@/services/usuario-service'
 import type { UserInfo, Role } from '@/types'
 
@@ -37,32 +35,11 @@ const rolesConfig: Record<Role, { label: string; className: string; icon: typeof
 }
 
 export default function AdminUsuariosPage() {
-  const router = useRouter()
-  const { isAdmin, isAuthenticated, isLoading: authLoading, initializeAuth } = useAuthStore()
   const [usuarios, setUsuarios] = useState<UserInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    initializeAuth()
-  }, [initializeAuth])
-
-  useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        router.replace('/login')
-        return
-      }
-      if (!isAdmin()) {
-        router.replace('/dashboard')
-        return
-      }
-    }
-  }, [authLoading, isAuthenticated, isAdmin, router])
-
-  useEffect(() => {
-    if (authLoading || !isAuthenticated || !isAdmin()) return
-
     const fetchUsuarios = async () => {
       try {
         const data = await usuarioService.listar()
@@ -76,18 +53,10 @@ export default function AdminUsuariosPage() {
     }
 
     fetchUsuarios()
-  }, [authLoading, isAuthenticated, isAdmin])
+  }, [])
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    )
-  }
-
-  if (!isAuthenticated || !isAdmin()) {
-    return null
+  if (isLoading) {
+    return <PageLoading />
   }
 
   const adminsCount = usuarios.filter((u) => u.role === 'ADMIN').length
@@ -103,10 +72,7 @@ export default function AdminUsuariosPage() {
       </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <PageErrorAlert message={error} />
       )}
 
       {/* Cards de resumo */}

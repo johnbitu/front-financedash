@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
+import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
+import type { NavigationItem } from "@/lib/navigation"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -16,11 +17,7 @@ import {
 export function NavMain({
   items,
 }: {
-  items: {
-    title: string
-    url: string
-    icon?: Icon
-  }[]
+  items: NavigationItem[]
 }) {
   const pathname = usePathname()
 

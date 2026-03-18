@@ -12,22 +12,8 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
+import { THEME_OPTIONS } from '@/lib/theme'
 import { cn } from '@/lib/utils'
-
-type ThemeValue = 'tema-bom' | 'dark' | 'green-dark' | 'light' | 'green-light'
-
-type ThemeOption = {
-  value: ThemeValue
-  label: 'TemaBom' | 'Dark' | 'Verde-Dark' | 'Light' | 'Verde-Light'
-}
-
-const themeOptions: ThemeOption[] = [
-  { value: 'tema-bom', label: 'TemaBom' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'green-dark', label: 'Verde-Dark' },
-  { value: 'light', label: 'Light' },
-  { value: 'green-light', label: 'Verde-Light' },
-]
 
 type ThemeCommandDialogProps = {
   open: boolean
@@ -52,7 +38,7 @@ export function ThemeCommandDialog({
         <CommandList>
           <CommandEmpty>Nenhum tema encontrado.</CommandEmpty>
           <CommandGroup heading="Temas">
-            {themeOptions.map((option) => (
+            {THEME_OPTIONS.map((option) => (
               <CommandItem
                 key={option.value}
                 value={option.label}

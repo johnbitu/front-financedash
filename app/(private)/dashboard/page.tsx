@@ -9,9 +9,9 @@ import transacaoService from "@/services/transacao-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
+import { PageLoading } from "@/components/shared/page-loading"
 import { SectionCards } from "@/components/section-cards"
 import { Empty } from "@/components/ui/empty"
-import { Spinner } from "@/components/ui/spinner"
 
 export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<ResumoDashboard | null>(null)
@@ -56,11 +56,7 @@ export default function DashboardPage() {
   )
 
   if (isLoading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    )
+    return <PageLoading />
   }
 
   if (!dashboard) {
