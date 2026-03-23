@@ -24,7 +24,7 @@ export default function DashboardPage() {
       try {
         const [dashboardResponse, listResponse] = await Promise.all([
           transacaoService.dashboard(),
-          transacaoService.listar({ size: 40 }),
+          transacaoService.listar({ size: 1000 }),
         ])
         setDashboard(dashboardResponse)
         setTransactions(listResponse.content)
@@ -41,8 +41,10 @@ export default function DashboardPage() {
   }, [])
 
   const monthly = dashboard?.dadosMensais ?? []
-  const transactionsToShow = transactions.length ? transactions : dashboard?.transacoesRecentes ?? []
-  const hasData = monthly.length > 0 || transactionsToShow.length > 0
+  const transactionsToShow = transactions.length
+    ? transactions.slice(0, 40)
+    : dashboard?.transacoesRecentes ?? []
+  const hasData = monthly.length > 0 || transactions.length > 0 || transactionsToShow.length > 0
   const currentMonth = monthly.at(-1)
 
   const summary = useMemo(
@@ -88,7 +90,7 @@ export default function DashboardPage() {
             <>
               <SectionCards summary={summary} />
               <div className="px-4 lg:px-6">
-                <ChartAreaInteractive monthlyData={monthly} />
+                <ChartAreaInteractive monthlyData={monthly} transactions={transactions} />
               </div>
               <DataTable data={transactionsToShow} />
             </>

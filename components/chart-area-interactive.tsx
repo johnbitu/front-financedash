@@ -1,10 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Area, CartesianGrid, ComposedChart, XAxis, YAxis } from "recharts"
 
 import { formatarMoeda } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
+import type { ResumoTransacao } from "@/types"
 import {
   Card,
   CardAction,
@@ -36,6 +37,7 @@ type MonthlyData = {
 
 interface ChartAreaInteractiveProps {
   monthlyData: MonthlyData[]
+  transactions?: ResumoTransacao[]
 }
 
 const chartConfig = {
@@ -49,7 +51,19 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ChartAreaInteractive({ monthlyData }: ChartAreaInteractiveProps) {
+const dateKey = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+const dayLabel = (date: Date): string =>
+  new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" })
+    .format(date)
+    .replace(".", "")
+
+export function ChartAreaInteractive({ monthlyData, transactions = [] }: ChartAreaInteractiveProps) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("6m")
 
@@ -59,21 +73,68 @@ export function ChartAreaInteractive({ monthlyData }: ChartAreaInteractiveProps)
     }
   }, [isMobile])
 
+  const dailyData = React.useMemo(() => {
+    const totalsByDay = new Map<string, { receitas: number; despesas: number }>()
+
+    transactions.forEach((tx) => {
+      const key = tx.data.slice(0, 10)
+      if (!totalsByDay.has(key)) {
+        totalsByDay.set(key, { receitas: 0, despesas: 0 })
+      }
+      const slot = totalsByDay.get(key)!
+      if (tx.tipo === "RECEITA") slot.receitas += tx.valor
+      else slot.despesas += tx.valor
+    })
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    return Array.from({ length: 30 }, (_, index) => {
+      const current = new Date(today)
+      current.setDate(today.getDate() - (29 - index))
+      const key = dateKey(current)
+      const values = totalsByDay.get(key) ?? { receitas: 0, despesas: 0 }
+
+      return {
+        label: dayLabel(current),
+        receitas: values.receitas,
+        despesas: values.despesas,
+      }
+    })
+  }, [transactions])
+
   const filteredData = React.useMemo(() => {
     const ranges: Record<string, number> = {
       "6m": 6,
       "3m": 3,
-      "2m": 2,
+    }
+
+    if (timeRange === "30d") {
+      return dailyData
     }
 
     const size = ranges[timeRange] ?? 6
     return monthlyData.slice(-size).map((item) => ({
-      ...item,
-      saldo: item.receitas - item.despesas,
+      label: item.mes,
+      receitas: item.receitas,
+      despesas: item.despesas,
     }))
-  }, [monthlyData, timeRange])
+  }, [dailyData, monthlyData, timeRange])
 
-  const saldoPeriodo = filteredData.reduce((acc, item) => acc + item.saldo, 0)
+  const saldoPeriodo = filteredData.reduce((acc, item) => acc + (item.receitas - item.despesas), 0)
+  const yDomain = React.useMemo<[number, number]>(() => {
+    const values = filteredData.flatMap((item) => [item.receitas, item.despesas])
+    const min = Math.min(...values, 0)
+    const max = Math.max(...values, 0)
+    const range = max - min
+
+    if (range === 0) {
+      return [min - 1, max + 1]
+    }
+
+    const padding = range * 0.2
+    return [min - padding, max + padding * 0.15]
+  }, [filteredData])
 
   return (
     <Card className="@container/card">
@@ -97,7 +158,7 @@ export function ChartAreaInteractive({ monthlyData }: ChartAreaInteractiveProps)
           >
             <ToggleGroupItem value="6m">6 meses</ToggleGroupItem>
             <ToggleGroupItem value="3m">3 meses</ToggleGroupItem>
-            <ToggleGroupItem value="2m">2 meses</ToggleGroupItem>
+            <ToggleGroupItem value="30d">30 dias</ToggleGroupItem>
           </ToggleGroup>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
@@ -114,8 +175,8 @@ export function ChartAreaInteractive({ monthlyData }: ChartAreaInteractiveProps)
               <SelectItem value="3m" className="rounded-lg">
                 3 meses
               </SelectItem>
-              <SelectItem value="2m" className="rounded-lg">
-                2 meses
+              <SelectItem value="30d" className="rounded-lg">
+                30 dias
               </SelectItem>
             </SelectContent>
           </Select>
@@ -123,7 +184,10 @@ export function ChartAreaInteractive({ monthlyData }: ChartAreaInteractiveProps)
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer config={chartConfig} className="aspect-auto h-[260px] w-full">
-          <AreaChart data={filteredData}>
+          <ComposedChart
+            data={filteredData}
+            margin={{ top: 8, right: 8, left: 8, bottom: 20 }}
+          >
             <defs>
               <linearGradient id="fillReceitas" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--color-receitas)" stopOpacity={0.9} />
@@ -135,13 +199,24 @@ export function ChartAreaInteractive({ monthlyData }: ChartAreaInteractiveProps)
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
-            <XAxis dataKey="mes" tickLine={false} axisLine={false} tickMargin={8} />
-            <YAxis hide />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              height={36}
+              interval="preserveStartEnd"
+              minTickGap={24}
+            />
+            <YAxis hide domain={yDomain} />
             <ChartTooltip
               cursor={false}
               content={
                 <ChartTooltipContent
-                  formatter={(value) => formatarMoeda(Number(value))}
+                  formatter={(value, name) => {
+                    const label = name === "receitas" ? "Receita" : name === "despesas" ? "Despesa" : String(name)
+                    return `${label} - ${formatarMoeda(Number(value))}`
+                  }}
                   indicator="dot"
                 />
               }
@@ -160,7 +235,7 @@ export function ChartAreaInteractive({ monthlyData }: ChartAreaInteractiveProps)
               stroke="var(--color-receitas)"
               strokeWidth={2}
             />
-          </AreaChart>
+          </ComposedChart>
         </ChartContainer>
         <p className="mt-3 text-xs text-muted-foreground">
           Saldo acumulado no periodo: <span className="font-medium">{formatarMoeda(saldoPeriodo)}</span>

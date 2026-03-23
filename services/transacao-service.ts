@@ -40,6 +40,12 @@ const monthLabel = (dateString: string): string => {
     .replace('.', '')
 }
 
+const yearMonthKey = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
 const mapBackendTransaction = (tx: BackendTransaction): ResumoTransacao => ({
   id: tx.id,
   tipo: tx.tipo,
@@ -178,14 +184,19 @@ export const transacaoService = {
       else slot.despesas += t.valor
     })
 
-    const dadosMensais = Array.from(monthlyMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-6)
-      .map(([yearMonth, values]) => ({
-        mes: monthLabel(`${yearMonth}-01`),
+    const mesesParaExibir = 6
+    const hoje = new Date()
+    const dadosMensais = Array.from({ length: mesesParaExibir }, (_, index) => {
+      const date = new Date(hoje.getFullYear(), hoje.getMonth() - (mesesParaExibir - 1 - index), 1)
+      const key = yearMonthKey(date)
+      const values = monthlyMap.get(key) ?? { receitas: 0, despesas: 0 }
+
+      return {
+        mes: monthLabel(`${key}-01`),
         receitas: values.receitas,
         despesas: values.despesas,
-      }))
+      }
+    })
 
     return {
       totalReceitas,
