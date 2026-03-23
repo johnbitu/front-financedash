@@ -14,15 +14,36 @@ interface BackendAccountSummary {
   criadoEm: string
 }
 
-const mapBackendAccount = (account: BackendAccountSummary): ResumoConta => ({
+interface BackendAccountSummaryWithBalance extends BackendAccountSummary {
+  saldoAtual: number
+}
+
+const mapBackendAccount = (
+  account: BackendAccountSummary | BackendAccountSummaryWithBalance
+): ResumoConta => ({
   id: account.id,
   nome: account.nome,
   tipo: account.tipo as ResumoConta['tipo'],
-  saldoAtual: Number(account.saldoInicial),
+  saldoAtual: Number('saldoAtual' in account ? account.saldoAtual : account.saldoInicial),
   ativo: account.ativo,
   criadoEm: account.criadoEm,
   atualizadoEm: account.criadoEm,
 })
+
+const buscarComSaldo = async (
+  id: number,
+  fallback?: BackendAccountSummary
+): Promise<ResumoConta> => {
+  try {
+    const response = await api.get<BackendAccountSummaryWithBalance>(`/accounts/${id}/saldo`)
+    return mapBackendAccount(response.data)
+  } catch (error) {
+    if (fallback) {
+      return mapBackendAccount(fallback)
+    }
+    throw error
+  }
+}
 
 export const contaService = {
   /**
@@ -30,15 +51,14 @@ export const contaService = {
    */
   async listar(): Promise<ResumoConta[]> {
     const response = await api.get<BackendAccountSummary[]>('/accounts')
-    return response.data.map(mapBackendAccount)
+    return Promise.all(response.data.map((account) => buscarComSaldo(account.id, account)))
   },
 
   /**
    * Busca uma conta por ID
    */
   async buscarPorId(id: number): Promise<ResumoConta> {
-    const response = await api.get<BackendAccountSummary>(`/accounts/${id}`)
-    return mapBackendAccount(response.data)
+    return buscarComSaldo(id)
   },
 
   /**
@@ -52,7 +72,7 @@ export const contaService = {
       ativo: data.ativo,
     }
     const response = await api.post<BackendAccountSummary>('/accounts', payload)
-    return mapBackendAccount(response.data)
+    return buscarComSaldo(response.data.id, response.data)
   },
 
   /**
@@ -66,7 +86,7 @@ export const contaService = {
       ativo: data.ativo,
     }
     const response = await api.put<BackendAccountSummary>(`/accounts/${id}`, payload)
-    return mapBackendAccount(response.data)
+    return buscarComSaldo(response.data.id, response.data)
   },
 
   /**
