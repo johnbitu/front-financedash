@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Check } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
@@ -19,21 +19,14 @@ import { cn } from '@/lib/utils'
 
 export function ThemeCombobox() {
   const [open, setOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const selectedThemeLabel = useMemo(() => {
-    if (!mounted) return 'Selecione um tema'
-
     return (
       THEME_OPTIONS.find((option) => option.value === theme)?.label ??
       'Selecione um tema'
     )
-  }, [mounted, theme])
+  }, [theme])
 
   return (
     <Combobox open={open} onOpenChange={setOpen}>

@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { IconAlertCircle, IconCreditCard, IconRepeat, IconTargetArrow } from '@tabler/icons-react'
 
 import type {
@@ -76,27 +76,28 @@ export function DashboardResumoView() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [resumoResponse, transactionsResponse] = await Promise.all([
-          dashboardService.resumo(),
-          transacaoService.listar({ size: 1000 }),
-        ])
+  const fetchData = useCallback(async () => {
+    try {
+      const [resumoResponse, transactionsResponse] = await Promise.all([
+        dashboardService.resumo(),
+        transacaoService.listar({ size: 1000 }),
+      ])
 
-        setResumo(resumoResponse)
-        setTransactions(transactionsResponse.content)
-      } catch (err) {
-        setResumo(null)
-        setTransactions([])
-        setError(tratarErro(err))
-      } finally {
-        setIsLoading(false)
-      }
+      setResumo(resumoResponse)
+      setTransactions(transactionsResponse.content)
+      setError(null)
+    } catch (err) {
+      setResumo(null)
+      setTransactions([])
+      setError(tratarErro(err))
+    } finally {
+      setIsLoading(false)
     }
-
-    fetchData()
   }, [])
+
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
 
   const monthly = useMemo(() => buildMonthlyData(transactions), [transactions])
 
@@ -171,7 +172,7 @@ export function DashboardResumoView() {
             <ChartAreaInteractive monthlyData={monthly} transactions={transactions} />
           </div>
 
-          <DataTable data={transactions.slice(0, 40)} />
+          <DataTable data={transactions.slice(0, 40)} onDataChanged={fetchData} />
 
           <div className="grid gap-4 px-4 lg:grid-cols-3 lg:px-6">
             <Card>

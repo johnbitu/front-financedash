@@ -128,6 +128,7 @@ export default function MetasPage() {
     handleSubmit,
     control,
     reset,
+    setError: setFormError,
     formState: { errors },
   } = useForm<MetaFormData>({
     resolver: zodResolver(metaSchema),
@@ -221,6 +222,11 @@ export default function MetasPage() {
   }
 
   const onSubmit = async (data: MetaFormData) => {
+    if (!selectedMeta && !data.accountId) {
+      setFormError('accountId', { type: 'manual', message: 'Conta vinculada e obrigatoria na criacao da meta' })
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -507,7 +513,7 @@ export default function MetasPage() {
                 </Field>
 
                 <Field data-invalid={!!errors.accountId}>
-                  <FieldLabel>Conta vinculada (opcional)</FieldLabel>
+                  <FieldLabel>Conta vinculada</FieldLabel>
                   <Controller
                     name="accountId"
                     control={control}
