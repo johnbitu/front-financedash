@@ -1,5 +1,6 @@
 ﻿import api from '@/lib/api'
 import type {
+  AtualizarFaturaCartaoRequest,
   CriarCartaoRequest,
   ResumoCartao,
   ResumoFaturaCartao,
@@ -48,6 +49,19 @@ export const cartaoService = {
   async pagarFatura(cardId: number, invoiceId: number): Promise<ResumoFaturaCartao> {
     const response = await api.patch<ResumoFaturaCartao>(`/cards/${cardId}/invoices/${invoiceId}/pagar`)
     return response.data
+  },
+
+  async atualizarFatura(
+    cardId: number,
+    invoiceId: number,
+    data: AtualizarFaturaCartaoRequest
+  ): Promise<ResumoFaturaCartao> {
+    const response = await api.put<ResumoFaturaCartao>(`/cards/${cardId}/invoices/${invoiceId}`, data)
+    return response.data
+  },
+
+  async excluirFatura(cardId: number, invoiceId: number): Promise<void> {
+    await api.delete(`/cards/${cardId}/invoices/${invoiceId}`)
   },
 }
 

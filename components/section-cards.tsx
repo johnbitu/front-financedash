@@ -31,7 +31,7 @@ export function SectionCards({ summary }: SectionCardsProps) {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Saldo atual</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold leading-none tabular-nums whitespace-nowrap @[250px]/card:text-3xl">
             {formatarMoeda(summary.saldoAtual)}
           </CardTitle>
           <CardAction>
@@ -51,7 +51,7 @@ export function SectionCards({ summary }: SectionCardsProps) {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Receitas do mes</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold leading-none tabular-nums whitespace-nowrap @[250px]/card:text-3xl">
             {formatarMoeda(summary.receitasMes)}
           </CardTitle>
           <CardAction>
@@ -71,7 +71,7 @@ export function SectionCards({ summary }: SectionCardsProps) {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Despesas do mes</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold leading-none tabular-nums whitespace-nowrap @[250px]/card:text-3xl">
             {formatarMoeda(summary.despesasMes)}
           </CardTitle>
           <CardAction>
@@ -91,7 +91,7 @@ export function SectionCards({ summary }: SectionCardsProps) {
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Economia do mes</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold leading-none tabular-nums whitespace-nowrap @[250px]/card:text-3xl">
             {formatarMoeda(summary.economiaMes)}
           </CardTitle>
           <CardAction>

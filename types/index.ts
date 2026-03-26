@@ -129,6 +129,7 @@ export interface CriarTransacaoRequest {
   data: string // YYYY-MM-DD
   contaId: number
   categoriaId: number
+  cardId?: number
   observacoes?: string
 }
 
@@ -139,6 +140,7 @@ export interface AtualizarTransacaoRequest {
   data?: string
   contaId?: number
   categoriaId?: number
+  cardId?: number
   observacoes?: string
 }
 
@@ -217,6 +219,14 @@ export interface ResumoFaturaCartao {
   dataVencimento: string
   status: StatusFatura
   criadoEm: string
+}
+
+export interface AtualizarFaturaCartaoRequest {
+  mesReferencia?: number
+  anoReferencia?: number
+  valorTotal?: number
+  dataVencimento?: string
+  status?: StatusFatura
 }
 
 // ==================== META ====================

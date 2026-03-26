@@ -3,6 +3,7 @@
 import { type CSSProperties } from 'react'
 import { usePathname } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
+import { GlobalNewTransactionDialog } from '@/components/shared/global-new-transaction-dialog'
 import { PageLoading } from '@/components/shared/page-loading'
 import { SiteHeader } from '@/components/site-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -45,6 +46,7 @@ export default function PrivateLayout({
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
+        <GlobalNewTransactionDialog />
         <main className="flex-1 overflow-y-auto bg-muted/40 p-4 lg:p-6">
           {children}
         </main>

@@ -53,6 +53,7 @@ import { formatarData, formatarMoeda, tratarErro } from '@/lib/utils'
 import cartaoService from '@/services/cartao-service'
 import contaService from '@/services/conta-service'
 import type {
+  AtualizarFaturaCartaoRequest,
   BandeiraCartao,
   CriarCartaoRequest,
   ResumoCartao,
@@ -112,6 +113,16 @@ const cartaoSchema = z
 
 type CartaoFormData = z.infer<typeof cartaoSchema>
 
+const faturaSchema = z.object({
+  mesReferencia: z.coerce.number().int().min(1, 'Mes deve ser entre 1 e 12').max(12, 'Mes deve ser entre 1 e 12'),
+  anoReferencia: z.coerce.number().int().min(2000, 'Ano invalido').max(2100, 'Ano invalido'),
+  valorTotal: z.coerce.number().positive('Valor deve ser maior que zero'),
+  dataVencimento: z.string().min(1, 'Data de vencimento e obrigatoria'),
+  status: z.enum(['ABERTA', 'FECHADA', 'PAGA']),
+})
+
+type FaturaFormData = z.infer<typeof faturaSchema>
+
 const badgeFatura = (status: StatusFatura): 'outline' | 'default' | 'secondary' => {
   if (status === 'ABERTA') return 'outline'
   if (status === 'FECHADA') return 'default'
@@ -142,9 +153,14 @@ export default function CartoesPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isEditInvoiceDialogOpen, setIsEditInvoiceDialogOpen] = useState(false)
+  const [isDeleteInvoiceDialogOpen, setIsDeleteInvoiceDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isUpdatingInvoice, setIsUpdatingInvoice] = useState(false)
+  const [isDeletingInvoice, setIsDeletingInvoice] = useState(false)
   const [invoiceActionId, setInvoiceActionId] = useState<number | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<ResumoFaturaCartao | null>(null)
 
   const {
     register,
@@ -163,6 +179,23 @@ export default function CartoesPage() {
       limite: undefined,
       diaFechamento: undefined,
       diaVencimento: undefined,
+    },
+  })
+
+  const {
+    register: registerInvoice,
+    handleSubmit: handleSubmitInvoice,
+    control: controlInvoice,
+    reset: resetInvoice,
+    formState: { errors: invoiceErrors },
+  } = useForm<FaturaFormData>({
+    resolver: zodResolver(faturaSchema),
+    defaultValues: {
+      mesReferencia: undefined,
+      anoReferencia: undefined,
+      valorTotal: undefined,
+      dataVencimento: '',
+      status: 'ABERTA',
     },
   })
 
@@ -382,6 +415,64 @@ export default function CartoesPage() {
       setError(tratarErro(err))
     } finally {
       setInvoiceActionId(null)
+    }
+  }
+
+  const handleOpenEditInvoice = (invoice: ResumoFaturaCartao) => {
+    setSelectedInvoice(invoice)
+    resetInvoice({
+      mesReferencia: invoice.mesReferencia,
+      anoReferencia: invoice.anoReferencia,
+      valorTotal: invoice.valorTotal,
+      dataVencimento: invoice.dataVencimento.slice(0, 10),
+      status: invoice.status,
+    })
+    setIsEditInvoiceDialogOpen(true)
+  }
+
+  const handleOpenDeleteInvoice = (invoice: ResumoFaturaCartao) => {
+    setSelectedInvoice(invoice)
+    setIsDeleteInvoiceDialogOpen(true)
+  }
+
+  const handleUpdateInvoice = async (data: FaturaFormData) => {
+    if (!selectedCardId || !selectedInvoice) return
+
+    setIsUpdatingInvoice(true)
+    setError(null)
+    try {
+      const payload: AtualizarFaturaCartaoRequest = {
+        mesReferencia: data.mesReferencia,
+        anoReferencia: data.anoReferencia,
+        valorTotal: data.valorTotal,
+        dataVencimento: data.dataVencimento,
+        status: data.status,
+      }
+      await cartaoService.atualizarFatura(selectedCardId, selectedInvoice.id, payload)
+      setIsEditInvoiceDialogOpen(false)
+      await fetchFaturas(selectedCardId)
+      await fetchBaseData()
+    } catch (err) {
+      setError(tratarErro(err))
+    } finally {
+      setIsUpdatingInvoice(false)
+    }
+  }
+
+  const handleDeleteInvoice = async () => {
+    if (!selectedCardId || !selectedInvoice) return
+
+    setIsDeletingInvoice(true)
+    setError(null)
+    try {
+      await cartaoService.excluirFatura(selectedCardId, selectedInvoice.id)
+      setIsDeleteInvoiceDialogOpen(false)
+      await fetchFaturas(selectedCardId)
+      await fetchBaseData()
+    } catch (err) {
+      setError(tratarErro(err))
+    } finally {
+      setIsDeletingInvoice(false)
     }
   }
 
@@ -629,6 +720,17 @@ export default function CartoesPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon-sm" onClick={() => handleOpenEditInvoice(fatura)}>
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleOpenDeleteInvoice(fatura)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
                           {fatura.status === 'ABERTA' && (
                             <Button
                               variant="outline"
@@ -686,6 +788,102 @@ export default function CartoesPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isEditInvoiceDialogOpen} onOpenChange={setIsEditInvoiceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Fatura</DialogTitle>
+            <DialogDescription>
+              Atualize os dados da fatura #{selectedInvoice?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmitInvoice(handleUpdateInvoice)}>
+            <FieldGroup>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field data-invalid={!!invoiceErrors.mesReferencia}>
+                  <FieldLabel htmlFor="mesReferencia">Mes de referencia</FieldLabel>
+                  <Input id="mesReferencia" type="number" min="1" max="12" {...registerInvoice('mesReferencia')} />
+                  <FieldError errors={[invoiceErrors.mesReferencia]} />
+                </Field>
+
+                <Field data-invalid={!!invoiceErrors.anoReferencia}>
+                  <FieldLabel htmlFor="anoReferencia">Ano de referencia</FieldLabel>
+                  <Input id="anoReferencia" type="number" min="2000" max="2100" {...registerInvoice('anoReferencia')} />
+                  <FieldError errors={[invoiceErrors.anoReferencia]} />
+                </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field data-invalid={!!invoiceErrors.valorTotal}>
+                  <FieldLabel htmlFor="valorTotal">Valor total</FieldLabel>
+                  <Input id="valorTotal" type="number" step="0.01" min="0.01" {...registerInvoice('valorTotal')} />
+                  <FieldError errors={[invoiceErrors.valorTotal]} />
+                </Field>
+
+                <Field data-invalid={!!invoiceErrors.dataVencimento}>
+                  <FieldLabel htmlFor="dataVencimento">Data de vencimento</FieldLabel>
+                  <Input id="dataVencimento" type="date" {...registerInvoice('dataVencimento')} />
+                  <FieldError errors={[invoiceErrors.dataVencimento]} />
+                </Field>
+              </div>
+
+              <Field data-invalid={!!invoiceErrors.status}>
+                <FieldLabel>Status</FieldLabel>
+                <Controller
+                  name="status"
+                  control={controlInvoice}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ABERTA">ABERTA</SelectItem>
+                        <SelectItem value="FECHADA">FECHADA</SelectItem>
+                        <SelectItem value="PAGA">PAGA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError errors={[invoiceErrors.status]} />
+              </Field>
+            </FieldGroup>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsEditInvoiceDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isUpdatingInvoice}>
+                {isUpdatingInvoice && <Spinner className="mr-2" />}
+                Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteInvoiceDialogOpen} onOpenChange={setIsDeleteInvoiceDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Fatura</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a fatura #{selectedInvoice?.id}? Esta acao nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteInvoice}
+              disabled={isDeletingInvoice}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {isDeletingInvoice && <Spinner className="mr-2" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>

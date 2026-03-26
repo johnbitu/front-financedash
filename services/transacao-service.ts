@@ -29,6 +29,7 @@ interface BackendTransaction {
 interface BackendCreateOrUpdateTransactionRequest {
   accountId: number
   categoryId?: number
+  cardId?: number
   tipo: string
   valor: number
   descricao: string
@@ -72,6 +73,7 @@ const mapRequestToBackend = (
 ): BackendCreateOrUpdateTransactionRequest => ({
   accountId: data.contaId as number,
   categoryId: data.categoriaId,
+  cardId: data.cardId,
   tipo: data.tipo as string,
   valor: data.valor as number,
   descricao: data.descricao as string,

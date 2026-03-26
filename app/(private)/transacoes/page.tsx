@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useForm, Controller } from 'react-hook-form'
@@ -60,10 +60,12 @@ import { formatarMoeda, formatarData, tratarErro, cn } from '@/lib/utils'
 import transacaoService from '@/services/transacao-service'
 import contaService from '@/services/conta-service'
 import categoriaService from '@/services/categoria-service'
+import cartaoService from '@/services/cartao-service'
 import type {
   ResumoTransacao,
   ResumoConta,
   ResumoCategoria,
+  ResumoCartao,
   TipoTransacao,
   FiltroTransacao,
   CriarTransacaoRequest,
@@ -77,19 +79,20 @@ const tiposTransacao: { value: TipoTransacao; label: string; icon: typeof Trendi
 const transacaoSchema = z.object({
   descricao: z
     .string()
-    .min(1, 'Descrição é obrigatória')
-    .min(3, 'Descrição deve ter no mínimo 3 caracteres')
-    .max(200, 'Descrição deve ter no máximo 200 caracteres'),
+    .min(1, 'DescriÃ§Ã£o Ã© obrigatÃ³ria')
+    .min(3, 'DescriÃ§Ã£o deve ter no mÃ­nimo 3 caracteres')
+    .max(200, 'DescriÃ§Ã£o deve ter no mÃ¡ximo 200 caracteres'),
   valor: z
-    .number({ invalid_type_error: 'Valor é obrigatório' })
+    .number({ invalid_type_error: 'Valor Ã© obrigatÃ³rio' })
     .positive('Valor deve ser maior que zero'),
   tipo: z.enum(['RECEITA', 'DESPESA'], {
-    required_error: 'Tipo é obrigatório',
+    required_error: 'Tipo Ã© obrigatÃ³rio',
   }),
-  data: z.date({ required_error: 'Data é obrigatória' }),
-  contaId: z.number({ required_error: 'Conta é obrigatória' }).positive('Selecione uma conta'),
-  categoriaId: z.number({ required_error: 'Categoria é obrigatória' }).positive('Selecione uma categoria'),
-  observacoes: z.string().max(500, 'Observações devem ter no máximo 500 caracteres').optional(),
+  data: z.date({ required_error: 'Data Ã© obrigatÃ³ria' }),
+  contaId: z.number({ required_error: 'Conta Ã© obrigatÃ³ria' }).positive('Selecione uma conta'),
+  categoriaId: z.number({ required_error: 'Categoria Ã© obrigatÃ³ria' }).positive('Selecione uma categoria'),
+  cartaoId: z.number().positive('Selecione um cartao valido').optional(),
+  observacoes: z.string().max(500, 'ObservaÃ§Ãµes devem ter no mÃ¡ximo 500 caracteres').optional(),
 })
 
 type TransacaoFormData = z.infer<typeof transacaoSchema>
@@ -99,10 +102,11 @@ export default function TransacoesPage() {
   const [transacoes, setTransacoes] = useState<ResumoTransacao[]>([])
   const [contas, setContas] = useState<ResumoConta[]>([])
   const [categorias, setCategorias] = useState<ResumoCategoria[]>([])
+  const [cartoes, setCartoes] = useState<ResumoCartao[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Paginação
+  // PaginaÃ§Ã£o
   const [paginaAtual, setPaginaAtual] = useState(0)
   const [totalPaginas, setTotalPaginas] = useState(1)
   const [totalItens, setTotalItens] = useState(0)
@@ -136,22 +140,51 @@ export default function TransacoesPage() {
       data: new Date(),
       contaId: 0,
       categoriaId: 0,
+      cartaoId: undefined,
       observacoes: '',
     },
   })
 
   const tipoSelecionado = watch('tipo')
+  const contaSelecionadaId = watch('contaId')
+  const cartaoSelecionadoId = watch('cartaoId')
 
   // Filtra categorias pelo tipo selecionado
   const categoriasFiltradas = categorias.filter((c) => c.tipo === tipoSelecionado)
+  const cartoesVinculadosConta = cartoes.filter(
+    (cartao) => cartao.ativo && cartao.accountId === contaSelecionadaId
+  )
+
+  useEffect(() => {
+    if (!contaSelecionadaId || contaSelecionadaId <= 0) {
+      if (cartaoSelecionadoId !== undefined) {
+        setValue('cartaoId', undefined)
+      }
+      return
+    }
+
+    const cartaoAtualAindaVinculado = cartoesVinculadosConta.some(
+      (cartao) => cartao.id === cartaoSelecionadoId
+    )
+
+    if (cartaoAtualAindaVinculado) return
+
+    const primeiroCartaoVinculado = cartoesVinculadosConta[0]?.id
+    const proximoCartaoId = primeiroCartaoVinculado ?? undefined
+
+    if (cartaoSelecionadoId !== proximoCartaoId) {
+      setValue('cartaoId', proximoCartaoId)
+    }
+  }, [contaSelecionadaId, cartaoSelecionadoId, cartoesVinculadosConta, setValue])
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const [transacoesRes, contasRes, categoriasRes] = await Promise.all([
+      const [transacoesRes, contasRes, categoriasRes, cartoesRes] = await Promise.all([
         transacaoService.listar({ ...filtros, page: paginaAtual, size: tamanhoPagina }),
         contaService.listar(),
         categoriaService.listar(),
+        cartaoService.listar(),
       ])
 
       setTransacoes(transacoesRes.content)
@@ -159,12 +192,14 @@ export default function TransacoesPage() {
       setTotalItens(transacoesRes.totalElements)
       setContas(contasRes)
       setCategorias(categoriasRes)
+      setCartoes(cartoesRes)
     } catch (err) {
       setTransacoes([])
       setTotalPaginas(1)
       setTotalItens(0)
       setContas([])
       setCategorias([])
+      setCartoes([])
       setError(tratarErro(err))
     } finally {
       setIsLoading(false)
@@ -175,7 +210,7 @@ export default function TransacoesPage() {
     fetchData()
   }, [fetchData])
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = useCallback(() => {
     setSelectedTransacao(null)
     reset({
       descricao: '',
@@ -184,10 +219,21 @@ export default function TransacoesPage() {
       data: new Date(),
       contaId: contas[0]?.id || 0,
       categoriaId: 0,
+      cartaoId: undefined,
       observacoes: '',
     })
     setIsDialogOpen(true)
-  }
+  }, [contas, reset])
+
+  useEffect(() => {
+    const refreshFromGlobalCreate = () => {
+      void fetchData()
+    }
+    window.addEventListener('transaction-created', refreshFromGlobalCreate)
+    return () => {
+      window.removeEventListener('transaction-created', refreshFromGlobalCreate)
+    }
+  }, [fetchData])
 
   const handleOpenEdit = (transacao: ResumoTransacao) => {
     setSelectedTransacao(transacao)
@@ -198,6 +244,7 @@ export default function TransacoesPage() {
       data: new Date(transacao.data),
       contaId: transacao.contaId,
       categoriaId: transacao.categoriaId,
+      cartaoId: transacao.cardId,
       observacoes: transacao.observacoes || '',
     })
     setIsDialogOpen(true)
@@ -220,6 +267,7 @@ export default function TransacoesPage() {
         data: format(data.data, 'yyyy-MM-dd'),
         contaId: data.contaId,
         categoriaId: data.categoriaId,
+        cardId: data.cartaoId,
         observacoes: data.observacoes,
       }
 
@@ -273,7 +321,7 @@ export default function TransacoesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Transações</h1>
+          <h1 className="text-2xl font-bold">TransaÃ§Ãµes</h1>
           <p className="text-muted-foreground">
             Registre e acompanhe suas receitas e despesas
           </p>
@@ -290,7 +338,7 @@ export default function TransacoesPage() {
           </Button>
           <Button onClick={handleOpenCreate}>
             <Plus className="size-4" />
-            Nova Transação
+            Nova TransaÃ§Ã£o
           </Button>
         </div>
       </div>
@@ -354,7 +402,7 @@ export default function TransacoesPage() {
               </div>
 
               <div className="min-w-[150px]">
-                <label className="mb-1 block text-sm font-medium">Data Início</label>
+                <label className="mb-1 block text-sm font-medium">Data InÃ­cio</label>
                 <Input
                   type="date"
                   value={filtros.dataInicio || ''}
@@ -396,9 +444,9 @@ export default function TransacoesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Suas Transações</CardTitle>
+          <CardTitle>Suas TransaÃ§Ãµes</CardTitle>
           <CardDescription>
-            {totalItens} transaç{totalItens !== 1 ? 'ões' : 'ão'} encontrada{totalItens !== 1 ? 's' : ''}
+            {totalItens} transaÃ§{totalItens !== 1 ? 'Ãµes' : 'Ã£o'} encontrada{totalItens !== 1 ? 's' : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -407,11 +455,11 @@ export default function TransacoesPage() {
               <Empty.Icon>
                 <AlertCircle className="size-8" />
               </Empty.Icon>
-              <Empty.Title>Nenhuma transação encontrada</Empty.Title>
+              <Empty.Title>Nenhuma transaÃ§Ã£o encontrada</Empty.Title>
               <Empty.Description>
                 {temFiltrosAtivos
-                  ? 'Nenhuma transação corresponde aos filtros aplicados.'
-                  : 'Registre sua primeira transação para começar a controlar suas finanças.'}
+                  ? 'Nenhuma transaÃ§Ã£o corresponde aos filtros aplicados.'
+                  : 'Registre sua primeira transaÃ§Ã£o para comeÃ§ar a controlar suas finanÃ§as.'}
               </Empty.Description>
               <Empty.Actions>
                 {temFiltrosAtivos ? (
@@ -421,7 +469,7 @@ export default function TransacoesPage() {
                 ) : (
                   <Button onClick={handleOpenCreate}>
                     <Plus className="size-4" />
-                    Nova Transação
+                    Nova TransaÃ§Ã£o
                   </Button>
                 )}
               </Empty.Actions>
@@ -431,12 +479,12 @@ export default function TransacoesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Descrição</TableHead>
+                    <TableHead>DescriÃ§Ã£o</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Conta</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-right">AÃ§Ãµes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -487,7 +535,7 @@ export default function TransacoesPage() {
                               variant="ghost"
                               size="icon-sm"
                               onClick={() => handleOpenEdit(transacao)}
-                              aria-label="Editar transação"
+                              aria-label="Editar transaÃ§Ã£o"
                             >
                               <Pencil className="size-4" />
                             </Button>
@@ -495,7 +543,7 @@ export default function TransacoesPage() {
                               variant="ghost"
                               size="icon-sm"
                               onClick={() => handleOpenDelete(transacao)}
-                              aria-label="Excluir transação"
+                              aria-label="Excluir transaÃ§Ã£o"
                               className="text-destructive hover:text-destructive"
                             >
                               <Trash2 className="size-4" />
@@ -508,11 +556,11 @@ export default function TransacoesPage() {
                 </TableBody>
               </Table>
 
-              {/* Paginação */}
+              {/* PaginaÃ§Ã£o */}
               {totalPaginas > 1 && (
                 <div className="mt-4 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Página {paginaAtual + 1} de {totalPaginas}
+                    PÃ¡gina {paginaAtual + 1} de {totalPaginas}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -529,7 +577,7 @@ export default function TransacoesPage() {
                       onClick={() => setPaginaAtual((p) => Math.min(totalPaginas - 1, p + 1))}
                       disabled={paginaAtual >= totalPaginas - 1}
                     >
-                      Próxima
+                      PrÃ³xima
                     </Button>
                   </div>
                 </div>
@@ -544,12 +592,12 @@ export default function TransacoesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {selectedTransacao ? 'Editar Transação' : 'Nova Transação'}
+              {selectedTransacao ? 'Editar TransaÃ§Ã£o' : 'Nova TransaÃ§Ã£o'}
             </DialogTitle>
             <DialogDescription>
               {selectedTransacao
-                ? 'Altere as informações da transação'
-                : 'Preencha os dados para registrar uma nova transação'}
+                ? 'Altere as informaÃ§Ãµes da transaÃ§Ã£o'
+                : 'Preencha os dados para registrar uma nova transaÃ§Ã£o'}
             </DialogDescription>
           </DialogHeader>
 
@@ -593,7 +641,7 @@ export default function TransacoesPage() {
               </Field>
 
               <Field data-invalid={!!errors.descricao}>
-                <FieldLabel htmlFor="descricao">Descrição</FieldLabel>
+                <FieldLabel htmlFor="descricao">DescriÃ§Ã£o</FieldLabel>
                 <Input
                   id="descricao"
                   placeholder="Ex: Compra no supermercado"
@@ -705,11 +753,37 @@ export default function TransacoesPage() {
                 </Field>
               </div>
 
+              <Field data-invalid={!!errors.cartaoId}>
+                <FieldLabel>Cartao (opcional)</FieldLabel>
+                <Controller
+                  name="cartaoId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value?.toString() || 'NONE'}
+                      onValueChange={(v) => field.onChange(v === 'NONE' ? undefined : parseInt(v))}
+                    >
+                      <SelectTrigger className="w-full" aria-invalid={!!errors.cartaoId}>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NONE">Nenhum cartao</SelectItem>
+                        {cartoesVinculadosConta.map((cartao) => (
+                          <SelectItem key={cartao.id} value={cartao.id.toString()}>
+                            {cartao.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError errors={[errors.cartaoId]} />
+              </Field>
               <Field data-invalid={!!errors.observacoes}>
-                <FieldLabel htmlFor="observacoes">Observações (opcional)</FieldLabel>
+                <FieldLabel htmlFor="observacoes">ObservaÃ§Ãµes (opcional)</FieldLabel>
                 <Textarea
                   id="observacoes"
-                  placeholder="Detalhes adicionais sobre a transação"
+                  placeholder="Detalhes adicionais sobre a transaÃ§Ã£o"
                   rows={2}
                   aria-invalid={!!errors.observacoes}
                   {...register('observacoes')}
@@ -735,14 +809,14 @@ export default function TransacoesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Confirmação de Exclusão */}
+      {/* Dialog de ConfirmaÃ§Ã£o de ExclusÃ£o */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Transação</AlertDialogTitle>
+            <AlertDialogTitle>Excluir TransaÃ§Ã£o</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a transação &quot;{selectedTransacao?.descricao}&quot;?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir a transaÃ§Ã£o &quot;{selectedTransacao?.descricao}&quot;?
+              Esta aÃ§Ã£o nÃ£o pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -761,4 +835,5 @@ export default function TransacoesPage() {
     </div>
   )
 }
+
 

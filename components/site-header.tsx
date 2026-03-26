@@ -1,6 +1,5 @@
- "use client"
+﻿"use client"
 
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { IconCalendarStats } from "@tabler/icons-react"
 
@@ -70,8 +69,13 @@ export function SiteHeader() {
               </SelectContent>
             </Select>
           )}
-          <Button variant="outline" asChild size="sm" className="hidden sm:flex">
-            <Link href="/transacoes">Nova transacao</Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:flex"
+            onClick={() => window.dispatchEvent(new Event('open-new-transaction-modal'))}
+          >
+            Nova Transação
           </Button>
         </div>
       </div>
