@@ -20,8 +20,8 @@ export type NavigationItem = {
 }
 
 export const MAIN_NAV_ITEMS: NavigationItem[] = [
-  { title: 'Visao geral', url: '/dashboard/resumo', icon: IconDashboard },
-  { title: 'Este mes', url: '/dashboard', icon: IconCalendarStats },
+  { title: 'Visao geral', url: '/dashboard', icon: IconDashboard },
+  { title: 'Este mes', url: '/dashboard/resumo', icon: IconCalendarStats },
   { title: 'Transacoes', url: '/transacoes', icon: IconReceipt2 },
   { title: 'Categorias', url: '/categorias', icon: IconCategory },
   { title: 'Contas', url: '/contas', icon: IconBuildingBank },
