@@ -1,5 +1,5 @@
 ﻿import { DashboardResumoView } from '@/components/shared/dashboard-resumo-view'
 
-export default function DashboardPage() {
+export default function DashboardResumoPage() {
   return <DashboardResumoView />
 }

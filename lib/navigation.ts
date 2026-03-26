@@ -1,4 +1,4 @@
-import {
+﻿import {
   IconBuildingBank,
   IconCalendarStats,
   IconCategory,
@@ -20,14 +20,14 @@ export type NavigationItem = {
 }
 
 export const MAIN_NAV_ITEMS: NavigationItem[] = [
-  { title: 'Visao geral', url: '/dashboard', icon: IconDashboard },
+  { title: 'Visao geral', url: '/dashboard/resumo', icon: IconDashboard },
   { title: 'Este mes', url: '/dashboard', icon: IconCalendarStats },
   { title: 'Transacoes', url: '/transacoes', icon: IconReceipt2 },
   { title: 'Categorias', url: '/categorias', icon: IconCategory },
   { title: 'Contas', url: '/contas', icon: IconBuildingBank },
-  { title: 'Cartoes', url: '/dashboard', icon: IconCreditCard },
-  { title: 'Assinaturas', url: '/dashboard', icon: IconUserDollar },
-  { title: 'Metas', url: '/dashboard', icon: IconTargetArrow },
+  { title: 'Cartoes', url: '/cartoes', icon: IconCreditCard },
+  { title: 'Assinaturas', url: '/assinaturas', icon: IconUserDollar },
+  { title: 'Metas', url: '/metas', icon: IconTargetArrow },
 ]
 
 export const ADMIN_NAV_ITEMS: Required<NavigationItem>[] = [
