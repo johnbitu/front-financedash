@@ -1,20 +1,10 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Inter } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { ThemeProvider } from '@/components/theme-provider'
-import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
-import { cn } from "@/lib/utils";
-import { DEFAULT_THEME, THEME_VALUES } from '@/lib/theme'
-
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
-
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'FinançasPro - Gestão Financeira Pessoal',
-  description: 'Gerencie suas finanças pessoais de forma simples e eficiente. Controle suas contas, categorias e transações.',
+  title: 'Pierre Finance | Dashboard Financeiro',
+  description: 'Gerencie suas finanças com inteligencia e estilo',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -35,24 +25,20 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  colorScheme: 'dark',
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
-      <body className="font-sans antialiased">
-        <TooltipProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme={DEFAULT_THEME}
-            enableSystem={false}
-            themes={[...THEME_VALUES]}
-          >
-            {children}
-          </ThemeProvider>
-        </TooltipProvider>
+    <html lang="pt-BR" className="dark">
+      <body className="font-sans antialiased bg-black text-white">
+        {children}
         <Analytics />
       </body>
     </html>

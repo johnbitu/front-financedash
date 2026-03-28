@@ -1,70 +1,24 @@
-'use client'
+"use client"
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { getAuthSession, isSessionValid } from "@/lib/auth-session"
 
-import { useAuthStore } from '@/lib/auth-store'
-
-type UseAuthGuardParams = {
-  redirectIfAuthenticatedTo?: string
-  redirectIfUnauthenticatedTo?: string
-  redirectIfUnauthorizedTo?: string
-  requireAuth?: boolean
-  requireAdmin?: boolean
-}
-
-export function useAuthGuard({
-  redirectIfAuthenticatedTo,
-  redirectIfUnauthenticatedTo,
-  redirectIfUnauthorizedTo,
-  requireAuth = false,
-  requireAdmin = false,
-}: UseAuthGuardParams) {
+export function useAuthGuard() {
   const router = useRouter()
-  const { isAuthenticated, isLoading, initializeAuth, isAdmin } = useAuthStore()
+  const pathname = usePathname()
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    initializeAuth()
-  }, [initializeAuth])
-
-  const isAuthorized = !requireAdmin || isAdmin()
-
-  useEffect(() => {
-    if (isLoading) return
-
-    if (!requireAuth && isAuthenticated && redirectIfAuthenticatedTo) {
-      router.replace(redirectIfAuthenticatedTo)
+    const session = getAuthSession()
+    if (!isSessionValid(session)) {
+      if (pathname !== "/login") {
+        router.replace("/login")
+      }
       return
     }
+    setReady(true)
+  }, [pathname, router])
 
-    if (!requireAuth && !isAuthenticated && redirectIfUnauthenticatedTo) {
-      router.replace(redirectIfUnauthenticatedTo)
-      return
-    }
-
-    if (requireAuth && !isAuthenticated && redirectIfUnauthenticatedTo) {
-      router.replace(redirectIfUnauthenticatedTo)
-      return
-    }
-
-    if (requireAdmin && isAuthenticated && !isAuthorized && redirectIfUnauthorizedTo) {
-      router.replace(redirectIfUnauthorizedTo)
-    }
-  }, [
-    isAuthenticated,
-    isAuthorized,
-    isLoading,
-    redirectIfAuthenticatedTo,
-    redirectIfUnauthenticatedTo,
-    redirectIfUnauthorizedTo,
-    requireAdmin,
-    requireAuth,
-    router,
-  ])
-
-  return {
-    isLoading,
-    isAuthenticated,
-    isAuthorized,
-  }
+  return ready
 }

@@ -94,35 +94,9 @@ function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function EmptyActions({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="empty-actions"
-      className={cn('mt-2 flex items-center justify-center gap-2', className)}
-      {...props}
-    />
-  )
-}
-
-function EmptyIcon({ className, ...props }: React.ComponentProps<'div'>) {
-  return <EmptyMedia variant="icon" className={className} {...props} />
-}
-
-const EmptyCompound = Object.assign(Empty, {
-  Header: EmptyHeader,
-  Icon: EmptyIcon,
-  Media: EmptyMedia,
-  Title: EmptyTitle,
-  Description: EmptyDescription,
-  Content: EmptyContent,
-  Actions: EmptyActions,
-})
-
 export {
-  EmptyCompound as Empty,
+  Empty,
   EmptyHeader,
-  EmptyIcon,
-  EmptyActions,
   EmptyTitle,
   EmptyDescription,
   EmptyContent,
